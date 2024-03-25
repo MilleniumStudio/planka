@@ -14,6 +14,7 @@ import ActionsStep from './ActionsStep';
 import { ReactComponent as PlusMathIcon } from '../../assets/images/plus-math-icon.svg';
 
 import styles from './List.module.scss';
+import styles from './List.module.Dark.scss';
 
 const List = React.memo(
   ({ id, index, name, isPersisted, cardIds, canEdit, onUpdate, onDelete, onCardCreate }) => {
