@@ -1,5 +1,39 @@
 :global(#app) {
+  --dk-text: #B6C2CF;
+  --dk-shadow-raised: 0px 0px 0px 1px #00000000, 0px 1px 1px #03040480, 0px 0px 1px #03040480;
+  --dk-background-list: #101204;
+  --dk-surface-raised: #22272B;
+  --dk-surface-raised-hovered: #282E33;
+  --dk-surface-raised-pressed: #2C333A;
+
   .outerWrapper {
     border-radius: 12px;
+    background-color: var(--dk-background-list, #ebecf0);
+    box-shadow: var(--dk-shadow-raised, 0px 1px 1px #091e4240, 0px 0px 1px #091e424f);
+  }
+
+  .headerName {
+    color: var(--dk-text, #172b4d);
+  }
+
+  .card {
+    color: var(-dk-text, #172b4d);
+    background-color: var(--dk-surface-raised, #ffffff);
+    border-radius: 8px;
+    box-shadow: var(--dk-shadow-raised, 0px 1px 1px #091e4240, 0px 0px 1px #091e424f);
+
+    &:hover {
+      background-color: var(--dk-surface-raised, #ffffff);
+      border-bottom-color: transparent;
+
+      .target {
+        opacity: 1;
+      }
+    }
+
+    :focus-within {
+      opacity: 1;
+      outline: 2px solid var(--dk-border-focused, #388bff);
+    }
   }
 }
