@@ -11,7 +11,7 @@ on:
     branches: [master]
 
 env:
-  REGISTRY_IMAGE: ghcr.io/milleniumstudio/planka
+  REGISTRY_IMAGE: ghcr.io/milleniumstudio/planka:latest
 
 jobs:
   build:
