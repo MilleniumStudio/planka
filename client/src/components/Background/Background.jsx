@@ -8,6 +8,7 @@ import { ProjectBackgroundTypes } from '../../constants/Enums';
 
 import styles from './Background.module.scss';
 import globalStyles from '../../styles.module.scss';
+import '../DarkTheme/DarkTheme.module.scss';
 
 function Background({ type, name, imageUrl }) {
   return (
