@@ -11,7 +11,7 @@ on:
     branches: [master]
 
 env:
-  REGISTRY_IMAGE: ghcr.io/milleniumstudio/planka:latest
+  REGISTRY_IMAGE: ghcr.io/milleniumstudio/planka
 
 jobs:
   build:
@@ -50,8 +50,9 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.platform }}
+          tags: ${{ steps.meta.outputs.tags }}  # Use the 'tags' output instead of 'outputs'
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},name-canonical=true,push=true
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
@@ -82,6 +83,10 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest  # Add this line to ensure the 'latest' tag is generated          
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
