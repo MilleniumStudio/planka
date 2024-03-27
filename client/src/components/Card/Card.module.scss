@@ -4,7 +4,7 @@
     box-shadow: none;
     border-radius: 3px;
     box-sizing: content-box;
-    color: #798d99;
+    color: #fff;
     display: inline-block;
     margin: 0;
     min-height: auto;
@@ -16,10 +16,11 @@
     top: 2px;
     transition: background 85ms ease;
     width: 20px;
+    border-radius: 16px;
 
     &:hover {
-      background: #ebeef0;
-      color: #516b7a;
+      background: #282E33;
+      color: #fff;
     }
   }
 
@@ -50,14 +51,14 @@
   }
 
   .card {
-    background: #fff;
-    border-radius: 3px;
-    box-shadow: 0 1px 0 #ccc;
+    background: #22272B;
+    border-radius: 8px;
+    box-shadow: 0 1px 0 #22272B;
     position: relative;
+    top: 5px;
 
     &:hover {
-      background: #f5f6f7;
-      border-bottom-color: rgba(9, 30, 66, 0.25);
+      outline: 2px solid #85B8FF;
 
       .target {
         opacity: 1;
@@ -84,7 +85,7 @@
   }
 
   .details {
-    padding: 6px 8px 0;
+    padding: 10px 11px 0;
   }
 
   .labels {
@@ -94,7 +95,7 @@
   }
 
   .name {
-    color: #17394d;
+    color: #B6C2CF;
     font-size: 14px;
     line-height: 18px;
     padding-bottom: 6px;

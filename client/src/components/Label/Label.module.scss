@@ -10,7 +10,7 @@
   }
 
   .wrapper {
-    border-radius: 3px;
+    border-radius: 4px;
     box-sizing: border-box;
     color: #fff;
     font-weight: 400;
@@ -21,7 +21,7 @@
     white-space: nowrap;
   }
 
-  .wrapperNameless{
+  .wrapperNameless {
     width: 40px;
   }
 
@@ -33,7 +33,7 @@
 
   .wrapperTiny {
     font-size: 12px;
-    line-height: 20px;
+    line-height: 8px;
     max-width: 176px;
     padding: 0 6px;
   }

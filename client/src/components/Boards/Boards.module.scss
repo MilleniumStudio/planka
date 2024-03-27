@@ -55,7 +55,7 @@
   }
 
   .tabActive {
-    background: rgba(0, 0, 0, 0.24);
+    background: #454A4C;
 
     &:hover {
       background: rgba(0, 0, 0, 0.32);
@@ -104,7 +104,6 @@
   }
 
   .wrapper {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.24);
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;

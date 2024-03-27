@@ -1,23 +1,22 @@
 :global(#app) {
   .addCardButton {
-    background: #dfe3e6;
+    background: #101204;
     border: none;
-    color: #6b808c;
+    color: #B6C2CF;
     cursor: pointer;
     display: block;
-    fill: #6b808c;
+    fill: #B6C2CF;
     flex: 0 0 auto;
     font-weight: normal;
-    height: 36px;
     outline: none;
-    padding: 8px;
+    padding: 10px 8px;
     text-align: left;
     width: 100%;
 
     &:hover {
-      background: #c3cbd0;
-      color: #17394d;
-      fill: #17394d;
+      background: #A6C5E229;
+      color: #B6C2CF;
+      fill: #B6C2CF;
     }
   }
 
@@ -44,6 +43,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     width: 290px;
+    padding: 10px 0;
 
     &:hover {
       width: 272px;
@@ -106,7 +106,7 @@
   }
 
   .headerName {
-    color: #17394d;
+    color: #B6C2CF;
     font-weight: bold;
     line-height: 20px;
     max-height: 256px;
@@ -123,8 +123,8 @@
   }
 
   .outerWrapper {
-    background: #dfe3e6;
-    border-radius: 3px;
+    background: #101204;
+    border-radius: 12px;
     overflow: hidden;
   }
 }

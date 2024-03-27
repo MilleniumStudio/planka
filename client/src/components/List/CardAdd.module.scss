@@ -7,12 +7,14 @@
     padding: 0;
     resize: none;
     width: 100%;
+    color: #B6C2CF;
+    background: #22272B;
   }
 
   .fieldWrapper {
-    background: #fff;
-    border-radius: 3px;
-    box-shadow: 0 1px 0 #ccc;
+    background: #22272B;
+    border-radius: 8px;
+    box-shadow: 0 1px 0 #22272B;
     margin-bottom: 8px;
     min-height: 20px;
     padding: 6px 8px 2px;
@@ -24,6 +26,8 @@
 
   .wrapper {
     padding-bottom: 8px;
+    position: relative;
+    top: 5px;
   }
 
   .wrapperClosed {

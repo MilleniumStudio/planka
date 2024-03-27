@@ -24,7 +24,7 @@
     background: transparent;
     border: none;
     border-radius: 3px;
-    color: #6b808c;
+    color: #B6C2CF;
     cursor: pointer;
     display: block;
     margin-top: 6px;
@@ -35,10 +35,11 @@
     text-align: left;
     text-decoration: none;
     width: 100%;
+    border-radius: 8px;
 
     &:hover {
-      background: rgba(9, 30, 66, 0.04);
-      color: #092d42;
+      background: #22272B;
+      color: #B6C2CF;
     }
   }
 

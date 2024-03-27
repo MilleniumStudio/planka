@@ -1,8 +1,8 @@
 :global(#app) {
   .addListButton {
-    background: rgba(0, 0, 0, 0.24);
+    background: #83878A;
     border: none;
-    border-radius: 3px;
+    border-radius: 12px;
     color: rgba(255, 255, 255, 0.72);
     cursor: pointer;
     display: block;
@@ -20,13 +20,15 @@
     }
 
     &:hover {
-      background: rgba(0, 0, 0, 0.32);
+      background: #68727A;
     }
   }
 
   .addListButtonIcon {
+    box-sizing: border-box;
     height: 20px;
     padding: 0.64px;
+    margin-right: 10px;
     width: 20px;
   }
 

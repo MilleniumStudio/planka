@@ -1,8 +1,8 @@
 :global(#app) {
   .actionButton {
-    background: #ebeef0;
+    background: #3B444C;
     box-shadow: 0 1px 0 0 rgba(9, 30, 66, 0.13);
-    color: #444;
+    color: #B6C2CF;
     margin-top: 8px;
     overflow: hidden;
     padding: 6px 8px 6px 18px;
@@ -12,14 +12,14 @@
     white-space: nowrap;
 
     &:hover {
-      background: #dfe3e6;
+      background: #4e565d;
       box-shadow: 0 1px 0 0 rgba(9, 30, 66, 0.25);
-      color: #4c4c4c;
+      color: #B6C2CF;
     }
   }
 
   .actionIcon {
-    color: #17394d;
+    color: #B6C2CF;
     display: inline;
     margin-right: 8px;
   }
@@ -29,7 +29,7 @@
   }
 
   .actionsTitle {
-    color: #8c8c8c;
+    color: #B6C2CF;
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.04em;
@@ -70,10 +70,10 @@
   }
 
   .dueDate {
-    background: rgba(9, 30, 66, 0.04);
+    background: #2d3439;
     border: none;
     border-radius: 3px;
-    color: #6b808c;
+    color: #B6C2CF;
     cursor: pointer;
     line-height: 20px;
     outline: none;
@@ -84,17 +84,17 @@
     vertical-align: top;
 
     &:hover {
-      background: rgba(9, 30, 66, 0.08);
-      color: #17394d;
+      background: #22272B;
+      color: #B6C2CF;
     }
   }
 
   .descriptionButton {
-    background: rgba(9, 30, 66, 0.04);
+    background: #22272B;
     border: none;
     border-radius: 3px;
     display: block;
-    color: #6b808c;
+    color: #B6C2CF;
     cursor: pointer;
     min-height: 54px;
     outline: none;
@@ -105,8 +105,8 @@
     width: 100%;
 
     &:hover {
-      background: rgba(9, 30, 66, 0.08);
-      color: #092d42;
+      background: #22272B;
+      color: #B6C2CF;
     }
   }
 
@@ -118,17 +118,24 @@
   .descriptionText {
     background: transparent;
     border: none;
-    color: #17394d;
+    color: #B6C2CF;
     margin-bottom: 8px;
     outline: none;
     overflow: hidden;
     padding: 0;
     text-align: left;
     width: 100%;
+    border-radius: 8px;
+    padding: 15px 10px;
+
+    &:hover {
+      background: #22272B;
+      color: #B6C2CF;
+    }
   }
 
   .grid {
-    background: #f5f6f7;
+    background: #323940;
     margin: 0;
   }
 
@@ -158,7 +165,7 @@
   }
 
   .moduleHeader {
-    color: #17394d;
+    color: #B6C2CF;
     font-size: 16px;
     font-weight: bold;
     line-height: 20px;
@@ -167,7 +174,7 @@
   }
 
   .moduleIcon {
-    color: #17394d;
+    color: #B6C2CF;
     font-size: 17px;
     height: 32px;
     left: -40px;
@@ -199,6 +206,7 @@
 
   .wrapper {
     width: 880px;
+    border-radius: 8px;
   }
 
   @media (max-width: 926px) {
