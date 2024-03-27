@@ -13,7 +13,8 @@
     width: 100%;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.05);
+      background: #313940;
+      color: #B6C2CF;
     }
   }
 
@@ -22,11 +23,12 @@
     line-height: 32px;
     position: relative;
     width: calc(100% - 40px);
+    color: #B6C2CF;
   }
 
   .menuItemTextActive:before {
     bottom: 2px;
-    color: #798d99;
+    color: #B6C2CF;
     content: "Г";
     font-size: 18px;
     font-weight: normal;

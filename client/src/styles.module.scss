@@ -114,36 +114,160 @@
   }
 
   ::-webkit-scrollbar {
-    height: 10px;
+    height: 20px;
     width: 10px;
     -webkit-appearance: none;
   }
 
   ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: #4E5356;
     border-radius: 0px;
+    padding: 2px 0;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 5px;
+    background: #949799;
     cursor: pointer;
     transition: color 0.2s ease;
     -webkit-transition: color 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:window-inactive {
-    background: rgba(0, 0, 0, 0.15);
+    background: #949799;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 135, 139, 0.8);
+    background: #949799;
   }
 }
 
 :global(#app) {
   /* Backgrounds */
 
+  /* Backed from trello */
+  .backgroundTrelloGreenFirst {
+    background: #164B35 !important;
+  }
+
+  .backgroundTrelloYellowFirst {
+    background: #533F04 !important;
+  }
+
+  .backgroundTrelloOrangeFirst {
+    background: #702E00 !important;
+  }
+
+  .backgroundTrelloRedFirst {
+    background: #5D1F1A !important;
+  }
+
+  .backgroundTrelloPurpleFirst {
+    background: #352C63 !important;
+  }
+
+  .backgroundTrelloGreenSecond {
+    background: #216E4E !important;
+  }
+
+  .backgroundTrelloYellowSecond {
+    background: #7F5F01 !important;
+  }
+
+  .backgroundTrelloOrangeSecond {
+    background: #A54800 !important;
+  }
+
+  .backgroundTrelloRedSecond {
+    background: #AE2E24 !important;
+  }
+
+  .backgroundTrelloPurpleSecond {
+    background: #5E4DB2 !important;
+  }
+
+  .backgroundTrelloGreenThird {
+    background: #4BCE97 !important;
+  }
+
+  .backgroundTrelloYellowThird {
+    background: #E2B203 !important;
+  }
+
+  .backgroundTrelloOrangeThird {
+    background: #FEA362 !important;
+  }
+
+  .backgroundTrelloRedThird {
+    background: #F87168 !important;
+  }
+
+  .backgroundTrelloPurpleThird {
+    background: #9F8FEF !important;
+  }
+
+  .backgroundTrelloBlueFirst {
+    background: #09326C !important;
+  }
+
+  .backgroundTrelloIndigoFirst {
+    background: #164555 !important;
+  }
+
+  .backgroundTrelloLimeFirst {
+    background: #37471F !important;
+  }
+
+  .backgroundTrelloPinkFirst {
+    background: #50253F !important;
+  }
+
+  .backgroundTrelloGreyFirst {
+    background: #454F59 !important;
+  }
+
+  .backgroundTrelloBlueSecond {
+    background: #0055CC !important;
+  }
+
+  .backgroundTrelloIndigoSecond {
+    background: #206A83 !important;
+  }
+
+  .backgroundTrelloLimeSecond {
+    background: #4C6B1F !important;
+  }
+
+  .backgroundTrelloPinkSecond {
+    background: #943D73 !important;
+  }
+
+  .backgroundTrelloGreySecond {
+    background: #596773 !important;
+  }
+
+  .backgroundTrelloBlueThird {
+    background: #579DFF !important;
+  }
+
+  .backgroundTrelloIndigoThird {
+    background: #6CC3E0 !important;
+  }
+
+  .backgroundTrelloLimeThird {
+    background: #94C748 !important;
+  }
+
+  .backgroundTrelloPinkThird {
+    background: #E774BB !important;
+  }
+
+  .backgroundTrelloGreyThird {
+    background: #8C9BAB !important;
+  }
+
+
+
+  /* Planka Default */
   .backgroundBerryRed {
     background: #e04556 !important;
   }
