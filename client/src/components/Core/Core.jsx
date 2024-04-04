@@ -10,6 +10,7 @@ import UsersModalContainer from '../../containers/UsersModalContainer';
 import UserSettingsModalContainer from '../../containers/UserSettingsModalContainer';
 import ProjectAddModalContainer from '../../containers/ProjectAddModalContainer';
 import Background from '../Background';
+import { ProjectBackgroundTypes } from '../../constants/Enums';
 
 import styles from './Core.module.scss';
 
@@ -40,10 +41,14 @@ const Core = React.memo(
           <Loader active size="massive" />
         ) : (
           <>
-            {currentProject && currentProject.background && (
+            {currentProject && (
               <Background
-                type={currentProject.background.type}
-                name={currentProject.background.name}
+                type={
+                  currentProject.background
+                    ? currentProject.background.type
+                    : ProjectBackgroundTypes.GRADIENT
+                }
+                name={currentProject.background ? currentProject.background.name : ``}
                 imageUrl={currentProject.backgroundImage && currentProject.backgroundImage.url}
               />
             )}
