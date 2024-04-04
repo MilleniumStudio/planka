@@ -161,7 +161,7 @@ const Card = React.memo(
                 {isPersisted ? (
                   <>
                     <Link
-                      to={`${Paths.CARDS.replace(':id', id)}#${name}`}
+                      to={`${Paths.CARDS.replace(':id', id)}#${name.replace(' ', '-')}`}
                       className={styles.content}
                       onClick={handleClick}
                     >
