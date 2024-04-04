@@ -33,9 +33,11 @@
 
   .wrapperTiny {
     font-size: 12px;
-    line-height: 16px;
+    line-height: 8px;
     max-width: 176px;
+    min-width: 50px;
     padding: 0 6px;
+    border-radius: 12px;
   }
 
   .wrapperSmall {

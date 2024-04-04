@@ -27,7 +27,7 @@ const Label = React.memo(({ name, color, size, isDisabled, onClick }) => {
         globalStyles[`background${upperFirst(camelCase(color))}`],
       )}
     >
-      {name || '\u00A0'}
+      {size === SIZES.TINY ? '\u00A0' : name || '\u00A0'}
     </div>
   );
 
