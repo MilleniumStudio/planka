@@ -33,5 +33,10 @@
     margin-left: 8px;
     color: white;
     font-size: 12px;
+
+    &:hover {
+      cursor: pointer;
+      color: darken(white, 10%);
+    }
   }
 }

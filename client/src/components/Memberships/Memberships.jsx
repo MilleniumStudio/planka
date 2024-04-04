@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'semantic-ui-react';
 import { usePopup } from '../../lib/popup';
@@ -34,8 +34,13 @@ const Memberships = React.memo(
 
     // Number of display slots available for showing user icons
     const userDisplaySlots = 5;
-    const shownUsers = items.slice(0, userDisplaySlots);
     const remainingUsers = items.slice(userDisplaySlots);
+    const [showAll, setShowAll] = useState(false);
+    const shownUsers = showAll ? items : items.slice(0, userDisplaySlots);
+
+    const handleToggleUsersList = useCallback(() => {
+      setShowAll(!showAll);
+    }, [showAll]);
 
     return (
       <>
@@ -68,8 +73,27 @@ const Memberships = React.memo(
             </span>
           ))}
         </span>
-        {remainingUsers.length > 0 && (
-          <span className={styles.moreUsersIndicator}>+ {remainingUsers.length} other Members</span>
+        {remainingUsers.length > 0 && !showAll && (
+          <span
+            className={styles.moreUsersIndicator}
+            onClick={handleToggleUsersList}
+            onKeyDown={handleToggleUsersList}
+            role="button"
+            tabIndex="0"
+          >
+            + {remainingUsers.length} other Members
+          </span>
+        )}
+        {remainingUsers.length > 0 && showAll && (
+          <span
+            className={styles.moreUsersIndicator}
+            onClick={handleToggleUsersList}
+            onKeyDown={handleToggleUsersList}
+            role="button"
+            tabIndex="0"
+          >
+            Show less
+          </span>
         )}
         {canEdit && (
           <AddPopup
