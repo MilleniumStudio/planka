@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Button } from 'semantic-ui-react';
 import { usePopup } from '../../lib/popup';
@@ -8,6 +8,9 @@ import ActionsStep from './ActionsStep';
 import User from '../User';
 
 import styles from './Memberships.module.scss';
+import MembershipsStep from './MembershipsStep';
+
+const MAX_MEMBERS = 6;
 
 const Memberships = React.memo(
   ({
@@ -31,21 +34,14 @@ const Memberships = React.memo(
   }) => {
     const AddPopup = usePopup(AddStep);
     const ActionsPopup = usePopup(ActionsStep);
+    const MembershipsPopup = usePopup(MembershipsStep);
 
-    // Number of display slots available for showing user icons
-    const userDisplaySlots = 5;
-    const remainingUsers = items.slice(userDisplaySlots);
-    const [showAll, setShowAll] = useState(false);
-    const shownUsers = showAll ? items : items.slice(0, userDisplaySlots);
-
-    const handleToggleUsersList = useCallback(() => {
-      setShowAll(!showAll);
-    }, [showAll]);
+    const remainMembersCount = items.length - MAX_MEMBERS;
 
     return (
       <>
         <span className={styles.users}>
-          {shownUsers.map((item) => (
+          {items.slice(0, MAX_MEMBERS).map((item) => (
             <span key={item.id} className={styles.user}>
               <ActionsPopup
                 membership={item}
@@ -73,27 +69,27 @@ const Memberships = React.memo(
             </span>
           ))}
         </span>
-        {remainingUsers.length > 0 && !showAll && (
-          <span
-            className={styles.moreUsersIndicator}
-            onClick={handleToggleUsersList}
-            onKeyDown={handleToggleUsersList}
-            role="button"
-            tabIndex="0"
+        {remainMembersCount > 0 && (
+          <MembershipsPopup
+            items={items}
+            permissionsSelectStep={permissionsSelectStep}
+            leaveButtonContent={leaveButtonContent}
+            leaveConfirmationTitle={leaveConfirmationTitle}
+            leaveConfirmationContent={leaveConfirmationContent}
+            leaveConfirmationButtonContent={leaveConfirmationButtonContent}
+            deleteButtonContent={deleteButtonContent}
+            deleteConfirmationTitle={deleteConfirmationTitle}
+            deleteConfirmationContent={deleteConfirmationContent}
+            deleteConfirmationButtonContent={deleteConfirmationButtonContent}
+            canEdit={canEdit}
+            canLeave={items.length > 1 || canLeaveIfLast}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
           >
-            + {remainingUsers.length} other Members
-          </span>
-        )}
-        {remainingUsers.length > 0 && showAll && (
-          <span
-            className={styles.moreUsersIndicator}
-            onClick={handleToggleUsersList}
-            onKeyDown={handleToggleUsersList}
-            role="button"
-            tabIndex="0"
-          >
-            Show less
-          </span>
+            <Button icon className={styles.addUser}>
+              + {remainMembersCount < 99 ? remainMembersCount : 99}
+            </Button>
+          </MembershipsPopup>
         )}
         {canEdit && (
           <AddPopup

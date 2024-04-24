@@ -16,6 +16,10 @@ const createSocketEventsChannel = () =>
       emit(entryActions.handleSocketReconnect());
     };
 
+    const handleLogout = () => {
+      emit(entryActions.logout(false));
+    };
+
     const handleUserCreate = api.makeHandleUserCreate(({ item }) => {
       emit(entryActions.handleUserCreate(item));
     });
@@ -79,6 +83,10 @@ const createSocketEventsChannel = () =>
     const handleListUpdate = ({ item }) => {
       emit(entryActions.handleListUpdate(item));
     };
+
+    const handleListSort = api.makeHandleListSort(({ item, included: { cards } }) => {
+      emit(entryActions.handleListSort(item, cards));
+    });
 
     const handleListDelete = ({ item }) => {
       emit(entryActions.handleListDelete(item));
@@ -171,6 +179,8 @@ const createSocketEventsChannel = () =>
     socket.on('disconnect', handleDisconnect);
     socket.on('reconnect', handleReconnect);
 
+    socket.on('logout', handleLogout);
+
     socket.on('userCreate', handleUserCreate);
     socket.on('userUpdate', handleUserUpdate);
     socket.on('userDelete', handleUserDelete);
@@ -192,6 +202,7 @@ const createSocketEventsChannel = () =>
 
     socket.on('listCreate', handleListCreate);
     socket.on('listUpdate', handleListUpdate);
+    socket.on('listSort', handleListSort);
     socket.on('listDelete', handleListDelete);
 
     socket.on('labelCreate', handleLabelCreate);
@@ -227,6 +238,8 @@ const createSocketEventsChannel = () =>
       socket.off('disconnect', handleDisconnect);
       socket.off('reconnect', handleReconnect);
 
+      socket.off('logout', handleLogout);
+
       socket.off('userCreate', handleUserCreate);
       socket.off('userUpdate', handleUserUpdate);
       socket.off('userDelete', handleUserDelete);
@@ -248,6 +261,7 @@ const createSocketEventsChannel = () =>
 
       socket.off('listCreate', handleListCreate);
       socket.off('listUpdate', handleListUpdate);
+      socket.off('listSort', handleListSort);
       socket.off('listDelete', handleListDelete);
 
       socket.off('labelCreate', handleLabelCreate);
