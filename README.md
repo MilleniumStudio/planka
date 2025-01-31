@@ -1,7 +1,7 @@
 # Planka
 #### Elegant open source project tracking.
 
-![David (path)](https://img.shields.io/github/package-json/v/plankanban/planka) ![Docker Pulls](https://img.shields.io/docker/pulls/meltyshev/planka) ![GitHub](https://img.shields.io/github/license/plankanban/planka)
+![David (path)](https://img.shields.io/github/package-json/v/plankanban/planka) ![Docker Pulls](https://img.shields.io/badge/docker_pulls-5M%2B-%23066da5) ![GitHub](https://img.shields.io/github/license/plankanban/planka)
 
 ![](https://raw.githubusercontent.com/plankanban/planka/master/demo.gif)
 
@@ -24,6 +24,14 @@
 There are many ways to install Planka, [check them out](https://docs.planka.cloud/docs/intro).
 
 For configuration, please see the [configuration section](https://docs.planka.cloud/docs/category/configuration).
+
+## Mobile app
+
+Here is the [mobile app repository](https://github.com/LouisHDev/planka_app) maintained by the community, where you can build an app for iOS and Android.
+
+Alternatively, you can download the [Android APK](https://github.com/LouisHDev/planka_app/releases/latest/download/app-release.apk) directly.
+
+If you have an iOS device and would like to test the app, you can join [TestFlight](https://testflight.apple.com/join/Uwn41eY4) (limited to 200 participants).
 
 ## Contact
 
