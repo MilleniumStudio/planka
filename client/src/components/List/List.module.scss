@@ -39,7 +39,6 @@
   }
 
   .cardsInnerWrapper {
-    max-height: calc(100vh - 268px);
     overflow-x: hidden;
     overflow-y: auto;
     width: 290px;
@@ -62,10 +61,6 @@
     }
   }
 
-  .cardsInnerWrapperFull {
-    max-height: calc(100vh - 232px);
-  }
-
   .cardsOuterWrapper {
     padding: 0 8px;
     white-space: normal;
@@ -79,6 +74,12 @@
 
     &:hover .target {
       opacity: 1;
+    }
+
+    @media only screen and (max-width: 797px) {
+      .target {
+        opacity: 1;
+      }
     }
   }
 
@@ -103,6 +104,15 @@
       background: rgba(9, 30, 66, 0.13);
       color: #516b7a;
     }
+
+    @media only screen and (max-width: 797px) {
+
+      &:focus,
+      &:active {
+        background: rgba(9, 30, 66, 0.13);
+        color: #516b7a;
+      }
+    }
   }
 
   .headerName {
@@ -125,6 +135,9 @@
   .outerWrapper {
     background: #101204;
     border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 198px);
     overflow: hidden;
   }
 }
