@@ -9,24 +9,24 @@
   }
 
   .addCardButton {
-    background: #dfe3e6;
+    background: #101204;
     border: none;
-    color: #6b808c;
+    color: #b6c2cf;
     cursor: pointer;
     display: block;
     fill: #6b808c;
     flex: 0 0 auto;
     font-weight: normal;
-    height: 36px;
+    height: auto;
     outline: none;
-    padding: 8px;
+    padding: 10px 8px;
     text-align: left;
     width: 100%;
 
     &:hover {
-      background: #c3cbd0;
-      color: #17394d;
-      fill: #17394d;
+      background: #a6c5e229;
+      color: #b6c2cf;
+      fill: #b6c2cf;
     }
   }
 
@@ -132,7 +132,7 @@
   }
 
   .headerName {
-    color: #17394d;
+    color: #b6c2cf;
     font-weight: bold;
     line-height: 20px;
     max-height: 256px;
@@ -154,8 +154,8 @@
   }
 
   .outerWrapper {
-    background: #dfe3e6;
-    border-radius: 3px;
+    background: #101204;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 198px);

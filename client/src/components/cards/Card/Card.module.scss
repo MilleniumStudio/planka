@@ -49,13 +49,14 @@
   }
 
   .wrapper {
-    background: #fff;
+    background: #22272b;
     border-radius: 3px;
-    box-shadow: 0 1px 0 #ccc;
+    box-shadow: 0 1px 0 #22272b;
     position: relative;
+    border-radius: 8px;
 
     &:hover {
-      background: #f5f6f7;
+      background: #1e2326;
       border-bottom-color: rgba(9, 30, 66, 0.25);
 
       .actionsButton {

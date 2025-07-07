@@ -23,7 +23,7 @@
   }
 
   .moduleHeader {
-    color: #17394d;
+    color: #b6c2cf;
     display: flex;
     font-size: 16px;
     font-weight: bold;
@@ -48,7 +48,7 @@
   }
 
   .moduleIcon {
-    color: #17394d;
+    color: #b6c2cf;
     font-size: 17px;
     height: 32px;
     left: -40px;
@@ -70,6 +70,7 @@
   }
 
   .wrapperDragging {
-    background: rgba(247, 246, 247, 0.8);
+    background: #22272b;
+    padding: 10px 15px;
   }
 }

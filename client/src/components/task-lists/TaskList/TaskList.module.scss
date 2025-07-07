@@ -37,17 +37,18 @@
     cursor: pointer;
     display: block;
     margin-top: 6px;
-    min-height: 54px;
+    min-height: 40px;
     outline: none;
     padding: 8px 12px;
     position: relative;
     text-align: left;
     text-decoration: none;
     width: 100%;
+    transition: all .2s ease-in-out;
 
     &:hover {
-      background: rgba(9, 30, 66, 0.04);
-      color: #092d42;
+      background: #464c53;
+      color: #6b808c;
     }
   }
 
