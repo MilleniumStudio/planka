@@ -5,10 +5,17 @@
 
 :global(#app) {
   .deleteButton {
-    bottom: 12px;
-    box-shadow: 0 1px 0 #cbcccc;
+    color: #ffffff;
+    box-shadow: 0 1px 0 #e83855;
+    background-color: #e83855;
     position: absolute;
     right: 9px;
+    bottom: 12px;
+  }
+
+  .deleteButton:hover {
+    box-shadow: 0 1px 0 #d32f2f;
+    background-color: #d32f2f;
   }
 
   .fieldBox {
@@ -22,7 +29,7 @@
   }
 
   .text {
-    color: #444444;
+    color: #b6c2cf;
     font-size: 12px;
     font-weight: bold;
     padding-bottom: 4px;

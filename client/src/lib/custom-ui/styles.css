@@ -14356,8 +14356,8 @@ img.ui.bordered.image {
 .ui.input.focus > input,
 .ui.input > input:focus {
   border-color: #85b7d9;
-  background: #ffffff;
-  color: rgba(0, 0, 0, 0.8);
+  background: #22272b;
+  color: #b6c2cf;
   -webkit-box-shadow: none;
   box-shadow: none;
 }
@@ -20374,7 +20374,7 @@ ol.ui.horizontal.list li:before,
   line-height: 1.21428571em;
   padding: 0.67857143em 1em;
   font-size: 1em;
-  background: #ffffff;
+  background: #22272b;
   border: 1px solid rgba(34, 36, 38, 0.15);
   color: rgba(0, 0, 0, 0.87);
   border-radius: 0.28571429rem;
@@ -20658,19 +20658,19 @@ ol.ui.horizontal.list li:before,
 .ui.form input[type="text"]:focus,
 .ui.form input[type="file"]:focus,
 .ui.form input[type="url"]:focus {
-  color: rgba(0, 0, 0, 0.95);
+  color: #b6c2cf;
   border-color: #85b7d9;
   border-radius: 0.28571429rem;
-  background: #ffffff;
+  background: #22272b;
   -webkit-box-shadow: 0px 0em 0em 0em rgba(34, 36, 38, 0.35) inset;
   box-shadow: 0px 0em 0em 0em rgba(34, 36, 38, 0.35) inset;
 }
 
 .ui.form textarea:focus {
-  color: rgba(0, 0, 0, 0.95);
+  color: #b6c2cf;
   border-color: #85b7d9;
   border-radius: 0.28571429rem;
-  background: #ffffff;
+  background: #22272b;
   -webkit-box-shadow: 0px 0em 0em 0em rgba(34, 36, 38, 0.35) inset;
   box-shadow: 0px 0em 0em 0em rgba(34, 36, 38, 0.35) inset;
   -webkit-appearance: none;
@@ -31615,11 +31615,11 @@ a.ui.card:hover,
 
 .ui.checkbox input:focus ~ .box:after,
 .ui.checkbox input:focus ~ label:after {
-  color: rgba(0, 0, 0, 0.95);
+  color: #b6c2cf;
 }
 
 .ui.checkbox input:focus ~ label {
-  color: rgba(0, 0, 0, 0.95);
+  color: #b6c2cf;
 }
 
 /*--------------
@@ -31957,7 +31957,7 @@ to prevent manually triggering */
 .ui.toggle.checkbox label {
   min-height: 1.5rem;
   padding-left: 4.5rem;
-  color: rgba(0, 0, 0, 0.87);
+  color: #b6c2cf;
 }
 
 .ui.toggle.checkbox label {
@@ -32038,7 +32038,7 @@ to prevent manually triggering */
 
 .ui.toggle.checkbox input:checked ~ .box,
 .ui.toggle.checkbox input:checked ~ label {
-  color: rgba(0, 0, 0, 0.95) !important;
+  color: #b6c2cf !important;
 }
 
 .ui.toggle.checkbox input:checked ~ .box:before,
@@ -32059,7 +32059,7 @@ to prevent manually triggering */
 
 .ui.toggle.checkbox input:focus:checked ~ .box,
 .ui.toggle.checkbox input:focus:checked ~ label {
-  color: rgba(0, 0, 0, 0.95) !important;
+  color: #b6c2cf !important;
 }
 
 .ui.toggle.checkbox input:focus:checked ~ .box:before,
@@ -40683,7 +40683,7 @@ textarea {
   z-index: 1;
   opacity: 0.8;
   font-size: 20px;
-  color: #17394d;
+  color: #b6c2cf;
   width: 22px;
   height: 22px;
   box-sizing: content-box;
@@ -40701,14 +40701,15 @@ textarea {
 *******************************/
 
 .ui.input {
-  color: #17394d;
+  color: #b6c2cf;
 }
 
 .ui.input > input {
   line-height: 20px !important;
   padding: 8px 12px !important;
-  color: #17394d !important;
+  color: #b6c2cf !important;
   border-radius: 3px !important;
+  background-color: #22272b;
 }
 
 /*******************************
@@ -40732,7 +40733,7 @@ textarea {
 .ui.button:hover {
   background-color: #dfe3e6;
   box-shadow: 0 1px 0 0 rgba(9, 45, 66, 0.25);
-  color: #6b808c;
+  color: #ffffff;
 }
 
 .ui.button:hover .icon {

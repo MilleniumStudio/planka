@@ -12,6 +12,13 @@
   }
 
   .deleteButton {
-    box-shadow: 0 1px 0 #cbcccc;
+    color: #ffffff;
+    box-shadow: 0 1px 0 #e83855;
+    background-color: #e83855;
+  }
+
+  .deleteButton:hover {
+    box-shadow: 0 1px 0 #d32f2f;
+    background-color: #d32f2f;
   }
 }
