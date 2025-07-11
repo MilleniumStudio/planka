@@ -12,6 +12,9 @@ RUN npm install npm --global \
 
 FROM node:22 AS client
 
+ARG NODE_OPTIONS
+ENV NODE_OPTIONS=${NODE_OPTIONS}
+
 WORKDIR /app
 
 COPY client .
