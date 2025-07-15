@@ -3,38 +3,46 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
-import upperFirst from 'lodash/upperFirst';
-import camelCase from 'lodash/camelCase';
-import React, { useCallback, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
-import classNames from 'classnames';
-import { useDispatch, useSelector } from 'react-redux';
-import { Button, Icon } from 'semantic-ui-react';
-import { push } from '../../../lib/redux-router';
-import { usePopup } from '../../../lib/popup';
+import upperFirst from "lodash/upperFirst";
+import camelCase from "lodash/camelCase";
+import React, { useCallback, useMemo, useState } from "react";
+import PropTypes from "prop-types";
+import classNames from "classnames";
+import { useDispatch, useSelector } from "react-redux";
+import { Button, Icon } from "semantic-ui-react";
+import { push } from "../../../lib/redux-router";
+import { usePopup } from "../../../lib/popup";
 
-import selectors from '../../../selectors';
-import Paths from '../../../constants/Paths';
-import { BoardMembershipRoles, CardTypes, ListTypes } from '../../../constants/Enums';
-import ProjectContent from './ProjectContent';
-import StoryContent from './StoryContent';
-import InlineContent from './InlineContent';
-import EditName from './EditName';
-import ActionsStep from './ActionsStep';
+import selectors from "../../../selectors";
+import Paths from "../../../constants/Paths";
+import {
+  BoardMembershipRoles,
+  CardTypes,
+  ListTypes,
+} from "../../../constants/Enums";
+import ProjectContent from "./ProjectContent";
+import StoryContent from "./StoryContent";
+import InlineContent from "./InlineContent";
+import EditName from "./EditName";
+import ActionsStep from "./ActionsStep";
 
-import styles from './Card.module.scss';
-import globalStyles from '../../../styles.module.scss';
+import styles from "./Card.module.scss";
+import globalStyles from "../../../styles.module.scss";
 
 const Card = React.memo(({ id, isInline }) => {
   const selectCardById = useMemo(() => selectors.makeSelectCardById(), []);
-  const selectIsCardWithIdRecent = useMemo(() => selectors.makeSelectIsCardWithIdRecent(), []);
+  const selectIsCardWithIdRecent = useMemo(
+    () => selectors.makeSelectIsCardWithIdRecent(),
+    [],
+  );
   const selectListById = useMemo(() => selectors.makeSelectListById(), []);
 
   const card = useSelector((state) => selectCardById(state, id));
   const list = useSelector((state) => selectListById(state, card.listId));
 
   const isHighlightedAsRecent = useSelector((state) => {
-    const { turnOffRecentCardHighlighting } = selectors.selectCurrentUser(state);
+    const { turnOffRecentCardHighlighting } =
+      selectors.selectCurrentUser(state);
 
     if (turnOffRecentCardHighlighting) {
       return false;
@@ -44,8 +52,11 @@ const Card = React.memo(({ id, isInline }) => {
   });
 
   const canUseActions = useSelector((state) => {
-    const boardMembership = selectors.selectCurrentUserMembershipForCurrentBoard(state);
-    return !!boardMembership && boardMembership.role === BoardMembershipRoles.EDITOR;
+    const boardMembership =
+      selectors.selectCurrentUserMembershipForCurrentBoard(state);
+    return (
+      !!boardMembership && boardMembership.role === BoardMembershipRoles.EDITOR
+    );
   });
 
   const dispatch = useDispatch();
@@ -56,8 +67,12 @@ const Card = React.memo(({ id, isInline }) => {
       document.activeElement.blur();
     }
 
-    dispatch(push(Paths.CARDS.replace(':id', id)));
-  }, [id, dispatch]);
+    dispatch(
+      push(
+        `${Paths.CARDS.replace(":id", id)}#${card.name.toLowerCase().replaceAll(" ", "-")}`,
+      ),
+    );
+  }, [id, card.name, dispatch]);
 
   const handleNameEdit = useCallback(() => {
     setIsEditNameOpened(true);
@@ -101,7 +116,11 @@ const Card = React.memo(({ id, isInline }) => {
 
   return (
     <div
-      className={classNames(styles.wrapper, isHighlightedAsRecent && styles.wrapperRecent, 'card')}
+      className={classNames(
+        styles.wrapper,
+        isHighlightedAsRecent && styles.wrapperRecent,
+        "card",
+      )}
     >
       {card.isPersisted ? (
         <>
