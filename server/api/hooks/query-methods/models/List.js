@@ -3,6 +3,11 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+const { makeRowToModelTransformer, makeWhereQueryBuilder } = require('../helpers');
+
+const buildWhereQuery = makeWhereQueryBuilder(List);
+const transformRowToModel = makeRowToModelTransformer(List);
+
 const defaultFind = (criteria, { sort = 'id' } = {}) => List.find(criteria).sort(sort);
 
 /* Query methods */
@@ -47,7 +52,80 @@ const getOneTrashByBoardId = (boardId) =>
     type: List.Types.TRASH,
   });
 
-const updateOne = (criteria, values) => List.updateOne(criteria).set({ ...values });
+const updateOne = async (criteria, values) => {
+  if (values.boardId || values.type) {
+    return sails.getDatastore().transaction(async (db) => {
+      const [whereQuery, whereQueryValues] = buildWhereQuery(criteria);
+
+      const queryResult = await sails
+        .sendNativeQuery(
+          `SELECT board_id, type FROM list WHERE ${whereQuery} LIMIT 1 FOR UPDATE`,
+          whereQueryValues,
+        )
+        .usingConnection(db);
+
+      if (queryResult.rowCount === 0) {
+        return { list: null };
+      }
+
+      const prev = transformRowToModel(queryResult.rows[0]);
+
+      const list = await List.updateOne(criteria)
+        .set({ ...values })
+        .usingConnection(db);
+
+      let tasks = [];
+      if (list) {
+        if (list.boardId !== prev.boardId) {
+          await Card.update({
+            listId: list.id,
+          })
+            .set({
+              boardId: list.boardId,
+            })
+            .usingConnection(db);
+        }
+
+        const prevTypeState = List.TYPE_STATE_BY_TYPE[prev.type];
+        const typeState = List.TYPE_STATE_BY_TYPE[list.type];
+
+        const transitions = {
+          [`${List.TypeStates.CLOSED}->${List.TypeStates.OPENED}`]: false,
+          [`${List.TypeStates.OPENED}->${List.TypeStates.CLOSED}`]: true,
+        };
+
+        const isClosed = transitions[`${prevTypeState}->${typeState}`];
+
+        if (!_.isUndefined(isClosed)) {
+          const cards = await Card.update({
+            listId: list.id,
+          })
+            .set({
+              isClosed,
+            })
+            .fetch()
+            .usingConnection(db);
+
+          if (cards.length > 0) {
+            tasks = await Task.update({
+              linkedCardId: sails.helpers.utils.mapRecords(cards),
+            })
+              .set({
+                isCompleted: isClosed,
+              })
+              .fetch()
+              .usingConnection(db);
+          }
+        }
+      }
+
+      return { list, tasks };
+    });
+  }
+
+  const list = await List.updateOne(criteria).set({ ...values });
+  return { list };
+};
 
 // eslint-disable-next-line no-underscore-dangle
 const delete_ = (criteria) => List.destroy(criteria).fetch();

@@ -5,6 +5,11 @@
 
 import EntryActionTypes from '../constants/EntryActionTypes';
 
+const handleUsersReset = () => ({
+  type: EntryActionTypes.USERS_RESET_HANDLE,
+  payload: {},
+});
+
 const createUser = (data) => ({
   type: EntryActionTypes.USER_CREATE,
   payload: {
@@ -134,10 +139,39 @@ const clearCurrentUserUsernameUpdateError = () => ({
   payload: {},
 });
 
+const updateUserAvatar = (id, data) => ({
+  type: EntryActionTypes.USER_AVATAR_UPDATE,
+  payload: {
+    id,
+    data,
+  },
+});
+
 const updateCurrentUserAvatar = (data) => ({
   type: EntryActionTypes.CURRENT_USER_AVATAR_UPDATE,
   payload: {
     data,
+  },
+});
+
+const createUserApiKey = (id) => ({
+  type: EntryActionTypes.USER_API_KEY_CREATE,
+  payload: {
+    id,
+  },
+});
+
+const deleteUserApiKey = (id) => ({
+  type: EntryActionTypes.USER_API_KEY_DELETE,
+  payload: {
+    id,
+  },
+});
+
+const clearUserApiKeyValue = (id) => ({
+  type: EntryActionTypes.USER_API_KEY_VALUE_CLEAR,
+  payload: {
+    id,
   },
 });
 
@@ -225,6 +259,7 @@ const removeUserFromFilterInCurrentBoard = (id) => ({
 });
 
 export default {
+  handleUsersReset,
   createUser,
   handleUserCreate,
   clearUserCreateError,
@@ -244,7 +279,11 @@ export default {
   updateCurrentUserUsername,
   clearUserUsernameUpdateError,
   clearCurrentUserUsernameUpdateError,
+  updateUserAvatar,
   updateCurrentUserAvatar,
+  createUserApiKey,
+  deleteUserApiKey,
+  clearUserApiKeyValue,
   deleteUser,
   handleUserDelete,
   addUserToCard,

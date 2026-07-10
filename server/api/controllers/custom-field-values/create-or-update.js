@@ -3,6 +3,73 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /cards/{cardId}/custom-field-values/customFieldGroupId:{customFieldGroupId}:customFieldId:{customFieldId}:
+ *   patch:
+ *     summary: Create or update custom field value
+ *     description: Creates or updates a custom field value for a card. Requires board editor permissions.
+ *     tags:
+ *       - Custom Field Values
+ *     operationId: updateCustomFieldValue
+ *     parameters:
+ *       - name: cardId
+ *         in: path
+ *         required: true
+ *         description: ID of the card to set the custom field value for
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *       - name: customFieldGroupId
+ *         in: path
+ *         required: true
+ *         description: ID of the custom field group the value belongs to
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091265"
+ *       - name: customFieldId
+ *         in: path
+ *         required: true
+ *         description: ID of the custom field the value belongs to
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091266"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - content
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 maxLength: 512
+ *                 description: Content/value of the custom field
+ *                 example: High Priority
+ *     responses:
+ *       200:
+ *         description: Custom field value created or updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/CustomFieldValue'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {

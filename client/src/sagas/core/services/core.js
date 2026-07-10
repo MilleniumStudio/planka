@@ -14,13 +14,15 @@ import i18n from '../../../i18n';
 import { removeAccessToken } from '../../../utils/access-token-storage';
 
 export function* initializeCore() {
-  const { item: config } = yield call(request, api.getConfig); // TODO: handle error
+  const { item: bootstrap } = yield call(request, api.getBootstrap); // TODO: handle error
 
-  yield put(actions.initializeCore.fetchConfig(config));
+  yield put(actions.initializeCore.fetchBootstrap(bootstrap));
 
   const {
+    config,
     user,
     board,
+    webhooks,
     users,
     projects,
     projectManagers,
@@ -48,8 +50,10 @@ export function* initializeCore() {
 
   yield put(
     actions.initializeCore(
+      config,
       user,
       board,
+      webhooks,
       users,
       projects,
       projectManagers,
@@ -75,14 +79,8 @@ export function* initializeCore() {
 }
 
 export function* changeCoreLanguage(language) {
-  if (language === null) {
-    yield call(i18n.detectLanguage);
-    yield call(i18n.loadCoreLocale);
-    yield call(i18n.changeLanguage, i18n.resolvedLanguage);
-  } else {
-    yield call(i18n.loadCoreLocale, language);
-    yield call(i18n.changeLanguage, language);
-  }
+  yield call(i18n.loadCoreLocale, language);
+  yield call(i18n.changeLanguage, language);
 }
 
 export function* toggleFavorites(isEnabled) {
@@ -117,11 +115,11 @@ export function* updateHomeView(value) {
   }
 }
 
-export function* logout(invalidateAccessToken) {
+export function* logout(revokeAccessToken) {
   yield call(removeAccessToken);
 
-  if (invalidateAccessToken) {
-    yield put(actions.logout.invalidateAccessToken());
+  if (revokeAccessToken) {
+    yield put(actions.logout.revokeAccessToken());
 
     try {
       yield call(request, api.deleteCurrentAccessToken);

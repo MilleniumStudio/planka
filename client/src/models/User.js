@@ -3,7 +3,7 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
-import { orderBy } from 'lodash';
+import orderBy from 'lodash/orderBy';
 import { attr } from 'redux-orm';
 
 import BaseModel from './BaseModel';
@@ -38,6 +38,12 @@ const DEFAULT_USERNAME_UPDATE_FORM = {
   error: null,
 };
 
+const DEFAULT_API_KEY_STATE = {
+  value: null,
+  isCreating: false,
+  error: null,
+};
+
 const filterProjectModels = (projectModels, search, isHidden) => {
   let filteredProjectModels = projectModels.filter(
     (projectModel) => projectModel.isHidden === isHidden,
@@ -67,6 +73,7 @@ export default class extends BaseModel {
     phone: attr(),
     organization: attr(),
     language: attr(),
+    apiKeyPrefix: attr(),
     subscribeToOwnCards: attr(),
     subscribeToCardWhenCommenting: attr(),
     turnOffRecentCardHighlighting: attr(),
@@ -86,6 +93,9 @@ export default class extends BaseModel {
     usernameUpdateForm: attr({
       getDefault: () => DEFAULT_USERNAME_UPDATE_FORM,
     }),
+    apiKeyState: attr({
+      getDefault: () => DEFAULT_API_KEY_STATE,
+    }),
   };
 
   static reducer({ type, payload }, User) {
@@ -93,7 +103,9 @@ export default class extends BaseModel {
       case ActionTypes.LOCATION_CHANGE_HANDLE:
       case ActionTypes.PROJECT_UPDATE_HANDLE:
       case ActionTypes.BOARD_MEMBERSHIP_CREATE_HANDLE:
+      case ActionTypes.LIST_UPDATE_HANDLE:
       case ActionTypes.CARD_UPDATE_HANDLE:
+      case ActionTypes.CARD_TRANSFER__FAILURE:
         if (payload.users) {
           payload.users.forEach((user) => {
             User.upsert(user);
@@ -113,6 +125,23 @@ export default class extends BaseModel {
       case ActionTypes.CORE_INITIALIZE:
         User.upsert(payload.user);
 
+        payload.users.forEach((user) => {
+          User.upsert(user);
+        });
+
+        break;
+      case ActionTypes.USERS_RESET_HANDLE:
+      case ActionTypes.PROJECT_CREATE_HANDLE:
+      case ActionTypes.PROJECT_MANAGER_CREATE_HANDLE:
+      case ActionTypes.BOARD_FETCH__SUCCESS:
+      case ActionTypes.CARDS_FETCH__SUCCESS:
+      case ActionTypes.CARD_CREATE_HANDLE:
+      case ActionTypes.CARD_TRANSFER__SUCCESS:
+      case ActionTypes.COMMENTS_FETCH__SUCCESS:
+      case ActionTypes.COMMENT_CREATE_HANDLE:
+      case ActionTypes.ACTIVITIES_IN_BOARD_FETCH__SUCCESS:
+      case ActionTypes.ACTIVITIES_IN_CARD_FETCH__SUCCESS:
+      case ActionTypes.NOTIFICATION_CREATE_HANDLE:
         payload.users.forEach((user) => {
           User.upsert(user);
         });
@@ -274,6 +303,53 @@ export default class extends BaseModel {
         });
 
         break;
+      case ActionTypes.USER_API_KEY_CREATE: {
+        const userModel = User.withId(payload.id);
+
+        userModel.apiKeyState = {
+          ...userModel.apiKeyState,
+          isCreating: true,
+        };
+
+        break;
+      }
+      case ActionTypes.USER_API_KEY_CREATE__SUCCESS:
+        User.withId(payload.user.id).update({
+          ...payload.user,
+          apiKeyState: {
+            ...DEFAULT_API_KEY_STATE,
+            value: payload.apiKey,
+          },
+        });
+
+        break;
+      case ActionTypes.USER_API_KEY_CREATE__FAILURE: {
+        const userModel = User.withId(payload.id);
+
+        userModel.apiKeyState = {
+          ...userModel.apiKeyState,
+          isCreating: false,
+        };
+
+        break;
+      }
+      case ActionTypes.USER_API_KEY_DELETE:
+        User.withId(payload.id).update({
+          apiKeyPrefix: null,
+          apiKeyState: DEFAULT_API_KEY_STATE,
+        });
+
+        break;
+      case ActionTypes.USER_API_KEY_VALUE_CLEAR: {
+        const userModel = User.withId(payload.id);
+
+        userModel.apiKeyState = {
+          ...userModel.apiKeyState,
+          value: null,
+        };
+
+        break;
+      }
       case ActionTypes.USER_DELETE:
         User.withId(payload.id).deleteWithRelated();
 
@@ -288,21 +364,6 @@ export default class extends BaseModel {
 
         break;
       }
-      case ActionTypes.PROJECT_CREATE_HANDLE:
-      case ActionTypes.PROJECT_MANAGER_CREATE_HANDLE:
-      case ActionTypes.BOARD_FETCH__SUCCESS:
-      case ActionTypes.CARDS_FETCH__SUCCESS:
-      case ActionTypes.CARD_CREATE_HANDLE:
-      case ActionTypes.COMMENTS_FETCH__SUCCESS:
-      case ActionTypes.COMMENT_CREATE_HANDLE:
-      case ActionTypes.ACTIVITIES_IN_BOARD_FETCH__SUCCESS:
-      case ActionTypes.ACTIVITIES_IN_CARD_FETCH__SUCCESS:
-      case ActionTypes.NOTIFICATION_CREATE_HANDLE:
-        payload.users.forEach((user) => {
-          User.upsert(user);
-        });
-
-        break;
       default:
     }
   }
@@ -349,7 +410,7 @@ export default class extends BaseModel {
     return this.getBoardMembershipsQuerySet()
       .toModelArray()
       .flatMap(({ board: { project: projectModel } }) => {
-        if (projectIds.includes(projectModel.id)) {
+        if (!projectModel || projectIds.includes(projectModel.id)) {
           return [];
         }
 

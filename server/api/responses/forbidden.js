@@ -31,11 +31,42 @@
  * ```
  */
 
+/**
+ * @swagger
+ * components:
+ *   responses:
+ *     Forbidden:
+ *       description: Access forbidden - insufficient permissions
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *               - message
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: Error code
+ *                 example: E_FORBIDDEN
+ *               message:
+ *                 type: string
+ *                 description: Error message
+ *                 example: Not enough rights
+ */
+
 module.exports = function forbidden(message) {
   const { res } = this;
 
-  return res.status(403).json({
+  const data = {
     code: 'E_FORBIDDEN',
-    message,
-  });
+  };
+
+  if (_.isPlainObject(message)) {
+    Object.assign(data, message);
+  } else {
+    data.message = message;
+  }
+
+  return res.status(403).json(data);
 };

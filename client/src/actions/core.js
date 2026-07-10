@@ -6,8 +6,10 @@
 import ActionTypes from '../constants/ActionTypes';
 
 const initializeCore = (
+  config,
   user,
   board,
+  webhooks,
   users,
   projects,
   projectManagers,
@@ -31,8 +33,10 @@ const initializeCore = (
 ) => ({
   type: ActionTypes.CORE_INITIALIZE,
   payload: {
+    config,
     user,
     board,
+    webhooks,
     users,
     projects,
     projectManagers,
@@ -56,10 +60,10 @@ const initializeCore = (
   },
 });
 
-initializeCore.fetchConfig = (config) => ({
-  type: ActionTypes.CORE_INITIALIZE__CONFIG_FETCH,
+initializeCore.fetchBootstrap = (bootstrap) => ({
+  type: ActionTypes.CORE_INITIALIZE__BOOTSTRAP_FETCH,
   payload: {
-    config,
+    bootstrap,
   },
 });
 
@@ -89,8 +93,8 @@ const logout = () => ({
   payload: {},
 });
 
-logout.invalidateAccessToken = () => ({
-  type: ActionTypes.LOGOUT__ACCESS_TOKEN_INVALIDATE,
+logout.revokeAccessToken = () => ({
+  type: ActionTypes.LOGOUT__ACCESS_TOKEN_REVOKE,
   payload: {},
 });
 

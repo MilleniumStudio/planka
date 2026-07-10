@@ -9,7 +9,7 @@
 /* eslint-disable no-restricted-syntax */
 
 const { getEncoding } = require('istextorbinary');
-const mime = require('mime');
+const mime = require('mime-types');
 const uuid = require('uuid');
 const sharp = require('sharp');
 const initKnex = require('knex');
@@ -18,13 +18,20 @@ const rc = require('sails/accessible/rc');
 const _ = require('lodash');
 
 const knexfile = require('./knexfile');
-const { MAX_SIZE_IN_BYTES_TO_GET_ENCODING, POSITION_GAP } = require('../constants');
+const { MAX_SIZE_TO_GET_ENCODING, POSITION_GAP } = require('../constants');
 
 const PrevActionTypes = {
   COMMENT_CARD: 'commentCard',
 };
 
-const PROJECT_BACKGROUND_IMAGES_PATH_SEGMENT = 'public/project-background-images';
+const PrevPathSegments = {
+  PROJECT_BACKGROUND_IMAGES: 'public/project-background-images',
+
+  FAVICONS: 'public/favicons',
+  USER_AVATARS: 'public/user-avatars',
+  BACKGROUND_IMAGES: 'public/background-images',
+  ATTACHMENTS: 'private/attachments',
+};
 
 const readStreamToBuffer = (readStream) =>
   new Promise((resolve, reject) => {
@@ -55,6 +62,18 @@ const loadSails = () =>
       resolve,
     );
   });
+
+const runStep = async (label, func) => {
+  process.stdout.write(`${label}... `);
+
+  try {
+    await func();
+    console.log('[OK]');
+  } catch (error) {
+    console.log('[FAIL]');
+    throw error;
+  }
+};
 
 const knex = initKnex(knexfile);
 
@@ -124,7 +143,7 @@ const upgradeDatabase = async () => {
             },
             subscribe_to_card_when_commenting: true,
             turn_off_recent_card_highlighting: false,
-            enable_favorites_by_default: false,
+            enable_favorites_by_default: true,
             default_editor_mode: User.EditorModes.WYSIWYG,
             default_home_view: User.HomeViews.GROUPED_PROJECTS,
             default_projects_order: User.ProjectOrders.BY_DEFAULT,
@@ -136,13 +155,15 @@ const upgradeDatabase = async () => {
 
       const identityProviderUsers = await trx('identity_provider_user')
         .withSchema('v1')
-        .whereIn('user_id', whereInUserIds);
+        .whereRaw('user_id = ANY (?)', [whereInUserIds]);
 
       if (identityProviderUsers.length > 0) {
         await knex.batchInsert('identity_provider_user', identityProviderUsers).transacting(trx);
       }
 
-      const sessions = await trx('session').withSchema('v1').whereIn('user_id', whereInUserIds);
+      const sessions = await trx('session')
+        .withSchema('v1')
+        .whereRaw('user_id = ANY (?)', [whereInUserIds]);
 
       if (sessions.length > 0) {
         await knex.batchInsert('session', sessions).transacting(trx);
@@ -210,13 +231,15 @@ const upgradeDatabase = async () => {
 
     const projectManagers = await trx('project_manager')
       .withSchema('v1')
-      .whereIn('project_id', whereInProjectIds);
+      .whereRaw('project_id = ANY (?)', [whereInProjectIds]);
 
     if (projectManagers.length > 0) {
       await knex.batchInsert('project_manager', projectManagers).transacting(trx);
     }
 
-    const boards = await trx('board').withSchema('v1').whereIn('project_id', whereInProjectIds);
+    const boards = await trx('board')
+      .withSchema('v1')
+      .whereRaw('project_id = ANY (?)', [whereInProjectIds]);
 
     const projectIdByBoardId = boards.reduce(
       (result, board) => ({
@@ -260,7 +283,7 @@ const upgradeDatabase = async () => {
 
     const boardMemberships = await trx('board_membership')
       .withSchema('v1')
-      .whereIn('board_id', whereInBoardIds);
+      .whereRaw('board_id = ANY (?)', [whereInBoardIds]);
 
     if (boardMemberships.length > 0) {
       await knex
@@ -282,13 +305,18 @@ const upgradeDatabase = async () => {
         .transacting(trx);
     }
 
-    const labels = await trx('label').withSchema('v1').whereIn('board_id', whereInBoardIds);
+    const labels = await trx('label')
+      .withSchema('v1')
+      .whereRaw('board_id = ANY (?)', [whereInBoardIds]);
 
     if (labels.length > 0) {
       await knex.batchInsert('label', labels).transacting(trx);
     }
 
-    const lists = await trx('list').withSchema('v1').whereIn('board_id', whereInBoardIds);
+    const lists = await trx('list')
+      .withSchema('v1')
+      .whereRaw('board_id = ANY (?)', [whereInBoardIds]);
+
     const whereInListIds = ['0', ...lists.map(({ id }) => id)];
 
     if (lists.length > 0) {
@@ -313,8 +341,8 @@ const upgradeDatabase = async () => {
 
     const cards = await trx('card')
       .withSchema('v1')
-      .whereIn('board_id', whereInBoardIds)
-      .whereIn('list_id', whereInListIds);
+      .whereRaw('board_id = ANY (?)', [whereInBoardIds])
+      .whereRaw('list_id = ANY (?)', [whereInListIds]);
 
     const cardById = _.keyBy(cards, 'id');
     const whereInCardIds = ['0', ...Object.keys(cardById)];
@@ -347,7 +375,7 @@ const upgradeDatabase = async () => {
 
     const cardSubscriptions = await trx('card_subscription')
       .withSchema('v1')
-      .whereIn('card_id', whereInCardIds);
+      .whereRaw('card_id = ANY (?)', [whereInCardIds]);
 
     if (cardSubscriptions.length > 0) {
       await knex.batchInsert('card_subscription', cardSubscriptions).transacting(trx);
@@ -355,19 +383,23 @@ const upgradeDatabase = async () => {
 
     const cardMemberships = await trx('card_membership')
       .withSchema('v1')
-      .whereIn('card_id', whereInCardIds);
+      .whereRaw('card_id = ANY (?)', [whereInCardIds]);
 
     if (cardMemberships.length > 0) {
       await knex.batchInsert('card_membership', cardMemberships).transacting(trx);
     }
 
-    const cardLabels = await trx('card_label').withSchema('v1').whereIn('card_id', whereInCardIds);
+    const cardLabels = await trx('card_label')
+      .withSchema('v1')
+      .whereRaw('card_id = ANY (?)', [whereInCardIds]);
 
     if (cardLabels.length > 0) {
       await knex.batchInsert('card_label', cardLabels).transacting(trx);
     }
 
-    const tasks = await trx('task').withSchema('v1').whereIn('card_id', whereInCardIds);
+    const tasks = await trx('task')
+      .withSchema('v1')
+      .whereRaw('card_id = ANY (?)', [whereInCardIds]);
 
     const tasksByCardId = _.groupBy(tasks, 'card_id');
     const taskCardIds = Object.keys(tasksByCardId);
@@ -409,7 +441,9 @@ const upgradeDatabase = async () => {
         .transacting(trx);
     }
 
-    const attachments = await trx('attachment').withSchema('v1').whereIn('card_id', whereInCardIds);
+    const attachments = await trx('attachment')
+      .withSchema('v1')
+      .whereRaw('card_id = ANY (?)', [whereInCardIds]);
 
     if (attachments.length > 0) {
       await knex
@@ -424,7 +458,7 @@ const upgradeDatabase = async () => {
             data: {
               fileReferenceId: attachment.dirname,
               filename: attachment.filename,
-              mimeType: mime.getType(attachment.filename),
+              mimeType: mime.lookup(attachment.filename) || null,
               sizeInBytes: 0,
               encoding: null,
               image: attachment.image,
@@ -434,7 +468,9 @@ const upgradeDatabase = async () => {
         .transacting(trx);
     }
 
-    const actions = await trx('action').withSchema('v1').whereIn('card_id', whereInCardIds);
+    const actions = await trx('action')
+      .withSchema('v1')
+      .whereRaw('card_id = ANY (?)', [whereInCardIds]);
 
     const actionById = _.keyBy(actions, 'id');
     const whereInActionIds = ['0', ...Object.keys(actionById)];
@@ -507,9 +543,9 @@ const upgradeDatabase = async () => {
 
     const notifications = await trx('notification')
       .withSchema('v1')
-      .whereIn('user_id', whereInUserIds)
-      .whereIn('action_id', whereInActionIds)
-      .whereIn('card_id', whereInCardIds);
+      .whereRaw('user_id = ANY (?)', [whereInUserIds])
+      .whereRaw('action_id = ANY (?)', [whereInActionIds])
+      .whereRaw('card_id = ANY (?)', [whereInCardIds]);
 
     if (notifications.length > 0) {
       await knex
@@ -528,9 +564,7 @@ const upgradeDatabase = async () => {
                 'created_at',
                 'updated_at',
               ]),
-              creator_user_id: userIdsSet.has(notification.creator_user_id)
-                ? notification.creator_user_id
-                : null,
+              creator_user_id: userIdsSet.has(action.user_id) ? action.user_id : null,
               board_id: card.board_id,
               type: action.type,
             };
@@ -573,7 +607,7 @@ const upgradeDatabase = async () => {
 const upgradeUserAvatars = async () => {
   const fileManager = sails.hooks['file-manager'].getInstance();
 
-  const dirnames = await fileManager.listDir(sails.config.custom.userAvatarsPathSegment);
+  const dirnames = await fileManager.listDir(PrevPathSegments.USER_AVATARS);
   const users = await knex('user_account').whereNotNull('avatar');
 
   if (dirnames) {
@@ -581,21 +615,23 @@ const upgradeUserAvatars = async () => {
 
     for (const dirname of dirnames) {
       const user = userByDirname[dirname];
-      const dirPathSegment = `${sails.config.custom.userAvatarsPathSegment}/${dirname}`;
+      const dirPathSegment = `${PrevPathSegments.USER_AVATARS}/${dirname}`;
 
       if (user) {
-        const sizeInBytes = await fileManager.getSizeInBytes(
+        const size = await fileManager.getSize(
           `${dirPathSegment}/original.${user.avatar.extension}`,
         );
 
-        await knex('user_account')
-          .update({
-            avatar: knex.raw("?? || jsonb_build_object('sizeInBytes', ?::bigint)", [
-              'avatar',
-              sizeInBytes,
-            ]),
-          })
-          .where('id', user.id);
+        if (size) {
+          await knex('user_account')
+            .update({
+              avatar: knex.raw("?? || jsonb_build_object('sizeInBytes', ?::bigint)", [
+                'avatar',
+                size,
+              ]),
+            })
+            .where('id', user.id);
+        }
       } else {
         await fileManager.deleteDir(dirPathSegment);
       }
@@ -603,7 +639,7 @@ const upgradeUserAvatars = async () => {
   }
 
   for (const { avatar } of users) {
-    const dirPathSegment = `${sails.config.custom.userAvatarsPathSegment}/${avatar.dirname}`;
+    const dirPathSegment = `${PrevPathSegments.USER_AVATARS}/${avatar.dirname}`;
 
     const isExists = await fileManager.isExists(`${dirPathSegment}/cover-180.${avatar.extension}`);
 
@@ -626,20 +662,20 @@ const upgradeUserAvatars = async () => {
       animated: true,
     });
 
-    const cover180Buffer = await image
+    const cover180 = image
+      .clone()
       .resize(180, 180, {
         withoutEnlargement: true,
       })
       .png({
         quality: 75,
         force: false,
-      })
-      .toBuffer();
+      });
 
     await fileManager.save(
       `${dirPathSegment}/cover-180.${avatar.extension}`,
-      cover180Buffer,
-      mime.getType(avatar.extension),
+      cover180,
+      mime.lookup(avatar.extension) || null,
     );
   }
 };
@@ -648,11 +684,11 @@ const upgradeBackgroundImages = async () => {
   const fileManager = sails.hooks['file-manager'].getInstance();
 
   await fileManager.renameDir(
-    PROJECT_BACKGROUND_IMAGES_PATH_SEGMENT,
-    sails.config.custom.backgroundImagesPathSegment,
+    PrevPathSegments.PROJECT_BACKGROUND_IMAGES,
+    PrevPathSegments.BACKGROUND_IMAGES,
   );
 
-  const dirnames = await fileManager.listDir(sails.config.custom.backgroundImagesPathSegment);
+  const dirnames = await fileManager.listDir(PrevPathSegments.BACKGROUND_IMAGES);
   const backgroundImages = await knex('background_image');
 
   if (dirnames) {
@@ -660,18 +696,20 @@ const upgradeBackgroundImages = async () => {
 
     for (const dirname of dirnames) {
       const backgroundImage = backgroundImageByDirname[dirname];
-      const dirPathSegment = `${sails.config.custom.backgroundImagesPathSegment}/${dirname}`;
+      const dirPathSegment = `${PrevPathSegments.BACKGROUND_IMAGES}/${dirname}`;
 
       if (backgroundImage) {
-        const sizeInBytes = await fileManager.getSizeInBytes(
+        const size = await fileManager.getSize(
           `${dirPathSegment}/original.${backgroundImage.extension}`,
         );
 
-        await knex('background_image')
-          .update({
-            size_in_bytes: sizeInBytes,
-          })
-          .where('id', backgroundImage.id);
+        if (size) {
+          await knex('background_image')
+            .update({
+              size_in_bytes: size,
+            })
+            .where('id', backgroundImage.id);
+        }
       } else {
         await fileManager.deleteDir(dirPathSegment);
       }
@@ -679,7 +717,7 @@ const upgradeBackgroundImages = async () => {
   }
 
   for (const backgroundImage of backgroundImages) {
-    const dirPathSegment = `${sails.config.custom.backgroundImagesPathSegment}/${backgroundImage.dirname}`;
+    const dirPathSegment = `${PrevPathSegments.BACKGROUND_IMAGES}/${backgroundImage.dirname}`;
 
     const isExists = await fileManager.isExists(
       `${dirPathSegment}/outside-360.${backgroundImage.extension}`,
@@ -706,7 +744,8 @@ const upgradeBackgroundImages = async () => {
       animated: true,
     });
 
-    const outside360Buffer = await image
+    const outside360 = image
+      .clone()
       .resize(360, 360, {
         fit: 'outside',
         withoutEnlargement: true,
@@ -714,13 +753,12 @@ const upgradeBackgroundImages = async () => {
       .png({
         quality: 75,
         force: false,
-      })
-      .toBuffer();
+      });
 
     await fileManager.save(
       `${dirPathSegment}/outside-360.${backgroundImage.extension}`,
-      outside360Buffer,
-      mime.getType(backgroundImage.extension),
+      outside360,
+      mime.lookup(backgroundImage.extension) || null,
     );
   }
 };
@@ -728,7 +766,7 @@ const upgradeBackgroundImages = async () => {
 const upgradeFileAttachments = async () => {
   const fileManager = sails.hooks['file-manager'].getInstance();
 
-  const dirnames = await fileManager.listDir(sails.config.custom.attachmentsPathSegment);
+  const dirnames = await fileManager.listDir(PrevPathSegments.ATTACHMENTS);
   const attachments = await knex('attachment').where('type', Attachment.Types.FILE);
 
   const fileReferenceIds = [];
@@ -737,7 +775,7 @@ const upgradeFileAttachments = async () => {
 
     for (const dirname of dirnames) {
       const attachment = attachmentByDirname[dirname];
-      const dirPathSegment = `${sails.config.custom.attachmentsPathSegment}/${dirname}`;
+      const dirPathSegment = `${PrevPathSegments.ATTACHMENTS}/${dirname}`;
 
       if (attachment) {
         if (uuid.validate(dirname)) {
@@ -750,12 +788,10 @@ const upgradeFileAttachments = async () => {
               'id',
             );
 
-            const sizeInBytes = await fileManager.getSizeInBytes(
-              `${dirPathSegment}/${attachment.data.filename}`,
-            );
+            const size = await fileManager.getSize(`${dirPathSegment}/${attachment.data.filename}`);
 
             let encoding = null;
-            if (sizeInBytes && sizeInBytes <= MAX_SIZE_IN_BYTES_TO_GET_ENCODING) {
+            if (size && size <= MAX_SIZE_TO_GET_ENCODING) {
               const readStream = await fileManager.read(
                 `${dirPathSegment}/${attachment.data.filename}`,
               );
@@ -768,14 +804,14 @@ const upgradeFileAttachments = async () => {
               .update({
                 data: trx.raw(
                   "?? || jsonb_build_object('fileReferenceId', ?::text, 'sizeInBytes', ?::bigint, 'encoding', ?::text)",
-                  ['data', id, sizeInBytes, encoding],
+                  ['data', id, size, encoding],
                 ),
               })
               .where('id', attachment.id);
 
             await fileManager.renameDir(
               `${dirPathSegment}`,
-              `${sails.config.custom.attachmentsPathSegment}/${id}`,
+              `${PrevPathSegments.ATTACHMENTS}/${id}`,
             );
 
             return id;
@@ -808,7 +844,7 @@ const upgradeFileAttachments = async () => {
     .whereRaw("??->>'image' IS NOT NULL", 'data');
 
   for (const { data } of imageAttachments) {
-    const dirPathSegment = `${sails.config.custom.attachmentsPathSegment}/${data.fileReferenceId}`;
+    const dirPathSegment = `${PrevPathSegments.ATTACHMENTS}/${data.fileReferenceId}`;
     const thumbnailsPathSegment = `${dirPathSegment}/thumbnails`;
 
     const isExists = await fileManager.isExists(
@@ -834,7 +870,8 @@ const upgradeFileAttachments = async () => {
       animated: true,
     });
 
-    const outside360Buffer = await image
+    const outside360 = image
+      .clone()
       .resize(360, 360, {
         fit: 'outside',
         withoutEnlargement: true,
@@ -842,16 +879,16 @@ const upgradeFileAttachments = async () => {
       .png({
         quality: 75,
         force: false,
-      })
-      .toBuffer();
+      });
 
     await fileManager.save(
       `${thumbnailsPathSegment}/outside-360.${data.image.thumbnailsExtension}`,
-      outside360Buffer,
+      outside360,
       data.mimeType,
     );
 
-    const outside720Buffer = await image
+    const outside720 = image
+      .clone()
       .resize(720, 720, {
         fit: 'outside',
         withoutEnlargement: true,
@@ -859,15 +896,34 @@ const upgradeFileAttachments = async () => {
       .png({
         quality: 75,
         force: false,
-      })
-      .toBuffer();
+      });
 
     await fileManager.save(
       `${thumbnailsPathSegment}/outside-720.${data.image.thumbnailsExtension}`,
-      outside720Buffer,
+      outside720,
       data.mimeType,
     );
   }
+};
+
+const upgradeDataStructure = async () => {
+  if (!sails.hooks.s3.isEnabled()) {
+    return;
+  }
+
+  const fileManager = sails.hooks['file-manager'].getInstance();
+
+  await fileManager.renameDir(PrevPathSegments.FAVICONS, sails.config.custom.faviconsPathSegment);
+
+  await fileManager.renameDir(
+    PrevPathSegments.USER_AVATARS,
+    sails.config.custom.userAvatarsPathSegment,
+  );
+
+  await fileManager.renameDir(
+    PrevPathSegments.BACKGROUND_IMAGES,
+    sails.config.custom.backgroundImagesPathSegment,
+  );
 };
 
 (async () => {
@@ -883,23 +939,26 @@ const upgradeFileAttachments = async () => {
 
     const isV1 = migrationNames[0] === '20180721020022_create_next_id_function.js';
     const isLatestV1 = migrationNames.at(-1) === '20250131202710_add_list_color.js';
+    const isInitialV2 = migrationNames.at(-1) === '20250228000022_version_2.js';
 
     if (isV1 && !isLatestV1) {
       throw new Error('Update to latest v1 first');
     }
 
     await loadSails();
+    sails.config.custom.uploadsBasePath = sails.config.appPath;
 
     if (isV1) {
-      console.log('Upgrading database...');
-      await upgradeDatabase();
+      await runStep('Upgrading database', upgradeDatabase);
     }
 
-    console.log('Upgrading files...');
+    if (isV1 || isInitialV2) {
+      await runStep('Upgrading user avatars', upgradeUserAvatars);
+      await runStep('Upgrading background images', upgradeBackgroundImages);
+      await runStep('Upgrading file attachments', upgradeFileAttachments);
+    }
 
-    await upgradeUserAvatars();
-    await upgradeBackgroundImages();
-    await upgradeFileAttachments();
+    await runStep('Upgrading data structure', upgradeDataStructure);
   } catch (error) {
     console.error(error);
     process.exitCode = 1;

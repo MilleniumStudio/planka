@@ -2,6 +2,8 @@ export default {
   translation: {
     common: {
       activeUsersLimitReached: 'Limite utenti attivi raggiunto',
+      adminLoginRequiredToInitializeInstance:
+        "Login amministratore richiesto per inizializzare l'istanza",
       emailAlreadyInUse: 'E-mail già in uso',
       emailOrUsername: 'E-mail o username',
       invalidCredentials: 'Credenziali non valide',
@@ -17,10 +19,17 @@ export default {
       unknownError: 'Errore sconosciuto, prova ancora',
       useSingleSignOn: 'Accedi con SSO',
       usernameAlreadyInUse: 'Username già in uso',
+      whoops_title: 'Ops!',
     },
 
     action: {
+      cancelAndClose: 'Annulla e chiudi',
+      continue: 'Continua',
+      debugSso: 'Debug SSO',
+      goBack: 'Torna indietro',
+      goHome: 'Vai alla home',
       logIn: 'Accedi',
+      logInWithSso: 'Accedi con SSO',
     },
   },
 };

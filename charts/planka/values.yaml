@@ -9,6 +9,10 @@ image:
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
+  # Optional: specify the image digest for pinning by SHA256
+  # When set, the image reference will include the digest for enhanced security
+  # Example: "abc123def456..." (without sha256: prefix)
+  digest: ""
 
 imagePullSecrets: []
 nameOverride: ""
@@ -26,6 +30,11 @@ existingSecretkeySecret: ""
 ## NOTE: Must contain keys `username` and `password`
 ## NOTE: When it's set, the `admin_username` and `admin_password` parameters are ignored
 existingAdminCredsSecret: ""
+
+admin_email: ""
+admin_password: ""
+admin_name: ""
+admin_username: ""
 
 # Base url for PLANKA. Will override `ingress.hosts[0].host`
 # Defaults to `http://localhost:3000` if ingress is disabled.
@@ -68,6 +77,7 @@ service:
 ingress:
   enabled: false
   className: ""
+  labels: {}
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
@@ -108,6 +118,11 @@ tolerations: []
 affinity: {}
 
 postgresql:
+  global:
+    security:
+      allowInsecureImages: true
+  image:
+    repository: bitnamilegacy/postgresql
   enabled: true
   auth:
     database: planka
@@ -214,19 +229,100 @@ oidc:
 ##
 extraEnv: []
 
-## Example extraEnv for configure SMTP
+## Example extraEnv for configuring SMTP
 ## extraEnv:
 ##   - name: SMTP_HOST
-##     value: "your_smtp_server"
+##     value: "smtp.example.com"
 ##   - name: SMTP_PORT
 ##     value: "587"
+##   - name: SMTP_NAME
+##     value: "Your Name"
+##   - name: SMTP_SECURE
+##     value: "true"
+##   - name: SMTP_TLS_REJECT_UNAUTHORIZED
+##     value: "false"
 ##   - name: SMTP_USER
 ##     value: "your_email@example.com"
 ##   - name: SMTP_PASSWORD
 ##     value: "your_password"
 ##   - name: SMTP_FROM
 ##     value: "your_email@example.com"
-##   - name: SMTP_NAME
-##     value: "your_name_or_login"
-##   - name: SMTP_SECURE
-##     value: "false"
+
+## End User Terms of Service configuration
+## Mount custom terms of service markdown files into the Planka deployment
+##
+terms:
+  enabled: false
+  # Provide individual language files as key-value pairs
+  # e.g.,
+  # customFiles:
+  #   en-US.md: |
+  #     # End User Terms of Service
+  #     ...
+  #   de-DE.md: |
+  #     # Nutzungsbedingungen
+  #     ...
+  customFiles: {}
+
+## Extra volume mounts configuration
+## Mount ConfigMaps, Secrets, and arbitrary volumes to the PLANKA container
+## This allows mounting any pre-existing ConfigMaps, Secrets, or other volume types
+##
+extraMounts: []
+## Example extraMounts:
+## extraMounts:
+##   - name: ca-certs
+##     mountPath: /etc/ssl/certs/ca-certificates.crt
+##     subPath: ca-bundle.crt
+##     readOnly: true
+##     configMap:
+##       name: ca-certificates
+##   - name: tls-certs
+##     mountPath: /etc/ssl/private
+##     readOnly: true
+##     secret:
+##       secretName: planka-tls
+##       items:
+##         - key: tls.crt
+##           path: server.crt
+##         - key: tls.key
+##           path: server.key
+##   - name: temp-storage
+##     mountPath: /tmp/planka-temp
+##     readOnly: false
+##     emptyDir:
+##       sizeLimit: 1Gi
+
+## Example configuration for OIDC with self-hosted Keycloak using custom CA
+## (Requires pre-existing ConfigMap "ca-certificates")
+## extraMounts:
+##   - name: keycloak-ca
+##     mountPath: /etc/ssl/certs/keycloak-ca.crt
+##     subPath: ca.crt
+##     readOnly: true
+##     configMap:
+##       name: ca-certificates
+##
+## extraEnv:
+##   - name: NODE_EXTRA_CA_CERTS
+##     value: "/etc/ssl/certs/keycloak-ca.crt"
+
+extraContainers: []
+## Extra sidecar containers
+## Add additional containers to the PLANKA pod
+##
+## Example extraContainers:
+## extraContainers:
+##   - name: nginx-sidecar
+##     image: nginx:latest
+##     ports:
+##       - containerPort: 8085
+##         name: nginx-http
+##   - name: log-collector
+##     image: busybox:latest
+##     command: ['sh', '-c', 'tail -f /var/log/app.log']
+##     volumeMounts:
+##       - name: planka
+##         mountPath: /var/log
+##         subPath: app-logs
+##

@@ -68,7 +68,7 @@ helm install planka . --set secretkey=$SECRETKEY \
 
 or create a values.yaml file like:
 
-```yaml
+````yaml
 secretkey: "<InsertSecretKey>"
 # The admin section needs to be present for new instances of PLANKA, after the first start you can remove the lines starting with admin_. If you want the admin user to be unchangeable admin_email: has to stay
 # After changing the config you have to run ```helm upgrade  planka . -f values.yaml```
@@ -89,11 +89,11 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
 
-# Needed for HTTPS
+  # Needed for HTTPS
   tls:
-   - secretName: planka-tls # existing TLS secret in k8s
-     hosts:
-       - planka.example.dev
+    - secretName: planka-tls # existing TLS secret in k8s
+      hosts:
+        - planka.example.dev
 ```
 
 ```bash
@@ -109,3 +109,208 @@ If you want to host PLANKA for more than just playing around with, you might wan
 - Specify a password for `postgresql.auth.password` as there have been issues with the postgresql chart generating new passwords locking you out of the data you've already stored. (see [this issue](https://github.com/bitnami/charts/issues/2061))
 
 Any questions or concerns, [raise an issue](https://github.com/Chris-Greaves/planka-helm-chart/issues/new).
+
+## Advanced Configuration
+
+### Extra Volume Mounts
+
+The Helm chart supports mounting arbitrary ConfigMaps, Secrets, and Volumes to the PLANKA deployment using the `extraMounts` configuration. This is especially useful for scenarios like:
+
+- Mounting custom CA certificates for OIDC with self-hosted identity providers
+- Adding custom configuration files
+- Mounting TLS certificates from existing secrets
+- Adding temporary or persistent storage volumes
+
+**Note**: ConfigMaps and Secrets must be created separately before referencing them in `extraMounts`.
+
+#### Basic Usage
+
+Use the `extraMounts` section to mount any type of volume:
+
+```yaml
+extraMounts:
+  # Mount CA certificate from existing ConfigMap
+  - name: ca-certs
+    mountPath: /etc/ssl/certs/custom-ca.crt
+    subPath: ca.crt
+    readOnly: true
+    configMap:
+      name: ca-certificates # Must exist
+
+  # Mount TLS certificates from existing Secret
+  - name: tls-certs
+    mountPath: /etc/ssl/private
+    readOnly: true
+    secret:
+      secretName: planka-tls-secret # Must exist
+      items:
+        - key: tls.crt
+          path: server.crt
+        - key: tls.key
+          path: server.key
+
+  # Temporary storage
+  - name: temp-storage
+    mountPath: /tmp/planka-temp
+    readOnly: false
+    emptyDir:
+      sizeLimit: 1Gi
+
+  # Host path mount
+  - name: backup-storage
+    mountPath: /var/lib/planka-backups
+    readOnly: false
+    hostPath:
+      path: /var/lib/planka-backups
+      type: DirectoryOrCreate
+
+  # NFS mount
+  - name: nfs-storage
+    mountPath: /shared/data
+    readOnly: false
+    nfs:
+      server: nfs.example.com
+      path: /exports/planka
+```
+
+### OIDC with Self-Hosted Keycloak
+
+A common use case is configuring OIDC with a self-hosted Keycloak instance that uses custom CA certificates.
+
+First, create the CA certificate ConfigMap:
+
+```bash
+kubectl create configmap ca-certificates --from-file=ca.crt=/path/to/your/ca.crt
+```
+
+Then configure the chart:
+
+```yaml
+# Mount custom CA certificate from existing ConfigMap
+extraMounts:
+  - name: keycloak-ca
+    mountPath: /etc/ssl/certs/keycloak-ca.crt
+    subPath: ca.crt
+    readOnly: true
+    configMap:
+      name: ca-certificates
+
+# Configure Node.js to trust the custom CA
+extraEnv:
+  - name: NODE_EXTRA_CA_CERTS
+    value: "/etc/ssl/certs/keycloak-ca.crt"
+
+# Enable OIDC
+oidc:
+  enabled: true
+  clientId: "planka-client"
+  clientSecret: "your-client-secret"
+  issuerUrl: "https://keycloak.example.com/realms/master"
+  admin:
+    roles:
+      - "planka-admin"
+```
+
+### Environment Variables from Secrets
+
+You can reference values from existing secrets in environment variables:
+
+```yaml
+extraEnv:
+  - name: SMTP_PASSWORD
+    valueFrom:
+      secretName: smtp-credentials
+      key: password
+  - name: CUSTOM_API_KEY
+    valueFrom:
+      secretName: api-credentials
+      key: api-key
+```
+
+### Custom Terms of Service
+
+You can provide your own End User Terms of Service by passing the markdown files directly via `values.yaml` in the `terms` configuration block. This automates the creation of a corresponding ConfigMap and volume mount.
+
+```yaml
+terms:
+  enabled: true
+  customFiles:
+    en-US.md: |
+      # End User Terms of Service
+      ...
+      [confirmations]::
+      ---
+      ✔️ **I have read and accept these End User Terms of Service**
+    de-DE.md: |
+      # Nutzungsbedingungen
+      ...
+      [confirmations]::
+      ---
+      ✔️ **Ich habe diese Nutzungsbedingungen gelesen und akzeptiere sie**
+```
+
+### Image Digest Pinning
+
+For enhanced security and reproducibility, you can pin the container image using its SHA256 digest instead of relying solely on tags. This ensures you always deploy the exact same image, preventing tag mutations or accidental updates.
+
+#### Finding the Image Digest
+
+You can find the digest of a specific image tag using:
+
+```bash
+docker inspect ghcr.io/plankanban/planka:latest --format='{{index .RepoDigests 0}}'
+# Output: ghcr.io/plankanban/planka@sha256:abc123def456...
+
+# Or with skopeo
+skopeo inspect docker://ghcr.io/plankanban/planka:latest
+```
+
+#### Usage
+
+You can use digest pinning in several ways:
+
+**Option 1: Digest with tag (recommended)**
+
+Includes the tag for reference while using the digest for verification:
+
+```bash
+helm install planka . --set secretkey=$SECRETKEY \
+  --set image.tag=latest \
+  --set image.digest=abc123def456... \
+  --set admin_email="demo@demo.demo" \
+  --set admin_password="demo" \
+  --set admin_name="Demo Demo" \
+  --set admin_username="demo"
+```
+
+Or in values.yaml:
+
+```yaml
+image:
+  repository: ghcr.io/plankanban/planka
+  tag: latest
+  digest: "abc123def456ab89cd12ef34ab56cd78ef90ab12cd34ef56ab78cd90ef12ab34"
+```
+
+**Option 2: Digest only**
+
+If you prefer to pin only by digest without specifying a tag:
+
+```yaml
+image:
+  repository: ghcr.io/plankanban/planka
+  tag: "" # Empty - digest alone identifies the image
+  digest: "abc123def456ab89cd12ef34ab56cd78ef90ab12cd34ef56ab78cd90ef12ab34"
+```
+
+#### Security Benefits
+
+- **Immutability**: Ensures you always deploy the exact same image
+- **Supply Chain Security**: Protects against tag mutations or registry compromise
+- **Reproducibility**: Makes deployments fully reproducible across environments
+- **Audit Trail**: Provides clear image identity in deployment manifests
+
+### Complete Example
+
+See `values-example.yaml` for a comprehensive example that demonstrates all the advanced features including OIDC configuration with custom CA certificates.
+````

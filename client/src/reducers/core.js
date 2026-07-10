@@ -7,6 +7,7 @@ import { LOCATION_CHANGE_HANDLE } from '../lib/redux-router';
 
 import ActionTypes from '../constants/ActionTypes';
 import ModalTypes from '../constants/ModalTypes';
+import ClipboardTypes from '../constants/ClipboardTypes';
 import { HomeViews, ProjectOrders } from '../constants/Enums';
 
 const initialState = {
@@ -15,8 +16,12 @@ const initialState = {
   isFavoritesEnabled: false,
   isEditModeEnabled: false,
   modal: null,
+  clipboard: null,
+  config: null,
   boardId: null,
+  cardId: null,
   recentCardId: null,
+  prevCardIds: [],
   homeView: HomeViews.GROUPED_PROJECTS,
   projectsSearch: '',
   projectsOrder: ProjectOrders.BY_DEFAULT,
@@ -36,13 +41,25 @@ export default (state = initialState, { type, payload }) => {
       const nextState = {
         ...state,
         isContentFetching: false,
-        boardId: payload.currentBoardId,
+        boardId: payload.currentBoardId || null,
+        cardId: payload.currentCardId || null,
       };
 
       if (payload.currentCardId) {
         nextState.recentCardId = payload.currentCardId;
       } else if (nextState.boardId !== state.boardId) {
         nextState.recentCardId = null;
+      }
+
+      if (payload.currentCardId) {
+        if (state.cardId) {
+          nextState.prevCardIds =
+            payload.currentCardId === nextState.prevCardIds.at(-1)
+              ? [...nextState.prevCardIds.slice(0, -1)]
+              : [...nextState.prevCardIds, state.cardId];
+        }
+      } else if (nextState.prevCardIds.length > 0) {
+        nextState.prevCardIds = [];
       }
 
       if (payload.isEditModeEnabled !== undefined) {
@@ -56,13 +73,30 @@ export default (state = initialState, { type, payload }) => {
         ...state,
         isContentFetching: true,
       };
-    case ActionTypes.CORE_INITIALIZE:
-      return {
+    case ActionTypes.SOCKET_RECONNECT_HANDLE:
+    case ActionTypes.USER_UPDATE_HANDLE:
+      if (payload.config) {
+        return {
+          ...state,
+          config: payload.config,
+        };
+      }
+
+      return state;
+    case ActionTypes.CORE_INITIALIZE: {
+      const nextState = {
         ...state,
         isFavoritesEnabled: payload.user.enableFavoritesByDefault,
         homeView: payload.user.defaultHomeView,
         projectsOrder: payload.user.defaultProjectsOrder,
       };
+
+      if (payload.config) {
+        nextState.config = payload.config;
+      }
+
+      return nextState;
+    }
     case ActionTypes.FAVORITES_TOGGLE:
       return {
         ...state,
@@ -78,7 +112,7 @@ export default (state = initialState, { type, payload }) => {
         ...state,
         homeView: payload.value,
       };
-    case ActionTypes.LOGOUT__ACCESS_TOKEN_INVALIDATE:
+    case ActionTypes.LOGOUT__ACCESS_TOKEN_REVOKE:
       return {
         ...state,
         isLogouting: true,
@@ -87,6 +121,20 @@ export default (state = initialState, { type, payload }) => {
       return {
         ...state,
         modal: payload,
+      };
+    case ActionTypes.CONFIG_UPDATE:
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          ...payload.data,
+        },
+      };
+    case ActionTypes.CONFIG_UPDATE__SUCCESS:
+    case ActionTypes.CONFIG_UPDATE_HANDLE:
+      return {
+        ...state,
+        config: payload.config,
       };
     case ActionTypes.PROJECTS_SEARCH:
       return {
@@ -129,6 +177,45 @@ export default (state = initialState, { type, payload }) => {
       }
 
       return state;
+    case ActionTypes.CARD_DELETE:
+      if (payload.clipboard && payload.id === payload.clipboard.cardId) {
+        return {
+          ...state,
+          clipboard: null,
+        };
+      }
+
+      return state;
+    case ActionTypes.CARD_DELETE_HANDLE:
+      if (payload.clipboard && payload.card.id === payload.clipboard.cardId) {
+        return {
+          ...state,
+          clipboard: null,
+        };
+      }
+
+      return state;
+    case ActionTypes.CARD_COPY:
+      return {
+        ...state,
+        clipboard: {
+          type: ClipboardTypes.COPY,
+          cardId: payload.id,
+        },
+      };
+    case ActionTypes.CARD_CUT:
+      return {
+        ...state,
+        clipboard: {
+          type: ClipboardTypes.CUT,
+          cardId: payload.id,
+        },
+      };
+    case ActionTypes.CARD_PASTE:
+      return {
+        ...state,
+        clipboard: null,
+      };
     default:
       return state;
   }

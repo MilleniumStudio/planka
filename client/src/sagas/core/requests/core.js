@@ -10,12 +10,21 @@ import request from '../request';
 import api from '../../../api';
 import mergeRecords from '../../../utils/merge-records';
 import { isUserAdminOrProjectOwner } from '../../../utils/record-helpers';
+import { UserRoles } from '../../../constants/Enums';
 
 export function* fetchCore() {
   const {
     item: user,
     included: { notificationServices: notificationServices1 },
   } = yield call(request, api.getCurrentUser, true);
+
+  let config;
+  let webhooks;
+
+  if (user.role === UserRoles.ADMIN) {
+    ({ item: config } = yield call(request, api.getConfig));
+    ({ items: webhooks } = yield call(request, api.getWebhooks));
+  }
 
   let users1;
   if (isUserAdminOrProjectOwner(user)) {
@@ -99,8 +108,10 @@ export function* fetchCore() {
   }
 
   return {
+    config,
     user,
     board,
+    webhooks,
     projectManagers,
     backgroundImages,
     baseCustomFieldGroups,

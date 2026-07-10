@@ -4,11 +4,10 @@
  */
 
 import React, { useCallback, useContext, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { Button, Grid, Icon } from 'semantic-ui-react';
+import { Button, Checkbox, Grid, Icon } from 'semantic-ui-react';
 import { useDidUpdate } from '../../../lib/hooks';
 
 import selectors from '../../../selectors';
@@ -24,12 +23,11 @@ import TaskLists from './TaskLists';
 import CustomFieldGroups from './CustomFieldGroups';
 import Communication from './Communication';
 import CreationDetailsStep from './CreationDetailsStep';
+import MoreActionsStep from './MoreActionsStep';
 import DueDateChip from '../DueDateChip';
 import StopwatchChip from '../StopwatchChip';
-import SelectCardTypeStep from '../SelectCardTypeStep';
 import EditDueDateStep from '../EditDueDateStep';
 import EditStopwatchStep from '../EditStopwatchStep';
-import MoveCardStep from '../MoveCardStep';
 import ExpandableMarkdown from '../../common/ExpandableMarkdown';
 import EditMarkdown from '../../common/EditMarkdown';
 import ConfirmationStep from '../../common/ConfirmationStep';
@@ -45,7 +43,7 @@ import AddCustomFieldGroupStep from '../../custom-field-groups/AddCustomFieldGro
 
 import styles from './ProjectContent.module.scss';
 
-const ProjectContent = React.memo(({ onClose }) => {
+const ProjectContent = React.memo(() => {
   const selectListById = useMemo(() => selectors.makeSelectListById(), []);
   const selectPrevListById = useMemo(() => selectors.makeSelectListById(), []);
 
@@ -107,7 +105,7 @@ const ProjectContent = React.memo(({ onClose }) => {
         canSubscribe: isMember,
         canJoin: false,
         canDuplicate: false,
-        canMove: false,
+        canMove: isEditor,
         canRestore: isEditor,
         canArchive: isEditor,
         canDelete: isEditor,
@@ -155,17 +153,6 @@ const ProjectContent = React.memo(({ onClose }) => {
     [dispatch],
   );
 
-  const handleTypeSelect = useCallback(
-    (type) => {
-      dispatch(
-        entryActions.updateCurrentCard({
-          type,
-        }),
-      );
-    },
-    [dispatch],
-  );
-
   const handleNameUpdate = useCallback(
     (name) => {
       dispatch(
@@ -188,6 +175,14 @@ const ProjectContent = React.memo(({ onClose }) => {
     [dispatch],
   );
 
+  const handleDueCompletionChange = useCallback(() => {
+    dispatch(
+      entryActions.updateCurrentCard({
+        isDueCompleted: !card.isDueCompleted,
+      }),
+    );
+  }, [card.isDueCompleted, dispatch]);
+
   const handleToggleStopwatchClick = useCallback(() => {
     dispatch(
       entryActions.updateCurrentCard({
@@ -197,18 +192,6 @@ const ProjectContent = React.memo(({ onClose }) => {
       }),
     );
   }, [card.stopwatch, dispatch]);
-
-  const handleDuplicateClick = useCallback(() => {
-    dispatch(
-      entryActions.duplicateCurrentCard({
-        name: `${card.name} (${t('common.copy', {
-          context: 'inline',
-        })})`,
-      }),
-    );
-
-    onClose();
-  }, [onClose, card.name, dispatch, t]);
 
   const handleRestoreClick = useCallback(() => {
     dispatch(entryActions.moveCurrentCard(card.prevListId, undefined, true));
@@ -304,13 +287,12 @@ const ProjectContent = React.memo(({ onClose }) => {
   const BoardMembershipsPopup = usePopupInClosableContext(BoardMembershipsStep);
   const LabelsPopup = usePopupInClosableContext(LabelsStep);
   const ListsPopup = usePopupInClosableContext(ListsStep);
-  const SelectCardTypePopup = usePopupInClosableContext(SelectCardTypeStep);
   const EditDueDatePopup = usePopupInClosableContext(EditDueDateStep);
   const EditStopwatchPopup = usePopupInClosableContext(EditStopwatchStep);
   const AddTaskListPopup = usePopupInClosableContext(AddTaskListStep);
   const AddAttachmentPopup = usePopupInClosableContext(AddAttachmentStep);
   const AddCustomFieldGroupPopup = usePopupInClosableContext(AddCustomFieldGroupStep);
-  const MoveCardPopup = usePopupInClosableContext(MoveCardStep);
+  const MoreActionsPopup = usePopupInClosableContext(MoreActionsStep);
   const ConfirmationPopup = usePopupInClosableContext(ConfirmationStep);
 
   return (
@@ -436,24 +418,31 @@ const ProjectContent = React.memo(({ onClose }) => {
                       context: 'title',
                     })}
                   </div>
-                  <span className={styles.attachment}>
+                  <span className={classNames(styles.attachment, styles.attachmentDueDate)}>
                     {canEditDueDate ? (
-                      <EditDueDatePopup cardId={card.id}>
-                        <DueDateChip
-                          withStatusIcon
-                          value={card.dueDate}
-                          withStatus={
-                            list.type !== ListTypes.CLOSED && !isInArchiveList && !isInTrashList
-                          }
-                        />
-                      </EditDueDatePopup>
+                      <>
+                        {!card.isClosed && (
+                          <Checkbox
+                            checked={card.isDueCompleted}
+                            disabled={!canEditDueDate}
+                            onChange={handleDueCompletionChange}
+                          />
+                        )}
+                        <EditDueDatePopup cardId={card.id}>
+                          <DueDateChip
+                            withStatusIcon
+                            value={card.dueDate}
+                            isCompleted={card.isDueCompleted}
+                            withStatus={!card.isClosed}
+                          />
+                        </EditDueDatePopup>
+                      </>
                     ) : (
                       <DueDateChip
                         withStatusIcon
                         value={card.dueDate}
-                        withStatus={
-                          list.type !== ListTypes.CLOSED && !isInArchiveList && !isInTrashList
-                        }
+                        isCompleted={card.isDueCompleted}
+                        withStatus={!card.isClosed}
                       />
                     )}
                   </span>
@@ -710,40 +699,6 @@ const ProjectContent = React.memo(({ onClose }) => {
                     )}
                   </Button>
                 )}
-                {!board.limitCardTypesToDefaultOne && canEditType && (
-                  <SelectCardTypePopup
-                    withButton
-                    defaultValue={card.type}
-                    title="common.editType"
-                    buttonContent="action.save"
-                    onSelect={handleTypeSelect}
-                  >
-                    <Button fluid className={classNames(styles.actionButton, styles.hidable)}>
-                      <Icon name="map outline" className={styles.actionIcon} />
-                      {t('action.editType', {
-                        context: 'title',
-                      })}
-                    </Button>
-                  </SelectCardTypePopup>
-                )}
-                {canDuplicate && (
-                  <Button
-                    fluid
-                    className={classNames(styles.actionButton, styles.hidable)}
-                    onClick={handleDuplicateClick}
-                  >
-                    <Icon name="copy outline" className={styles.actionIcon} />
-                    {t('action.duplicate')}
-                  </Button>
-                )}
-                {canMove && (
-                  <MoveCardPopup id={card.id}>
-                    <Button fluid className={classNames(styles.actionButton, styles.hidable)}>
-                      <Icon name="share square outline" className={styles.actionIcon} />
-                      {t('action.move')}
-                    </Button>
-                  </MoveCardPopup>
-                )}
                 {canRestore && (isInArchiveList || isInTrashList) && (
                   <Button
                     fluid
@@ -793,6 +748,16 @@ const ProjectContent = React.memo(({ onClose }) => {
                     </Button>
                   </ConfirmationPopup>
                 )}
+                {((!board.limitCardTypesToDefaultOne && canEditType) ||
+                  canDuplicate ||
+                  canMove) && (
+                  <MoreActionsPopup>
+                    <Button fluid className={classNames(styles.moreActionsButton, styles.hidable)}>
+                      <Icon name="ellipsis horizontal" className={styles.moreActionsButtonIcon} />
+                      {t('common.moreActions')}
+                    </Button>
+                  </MoreActionsPopup>
+                )}
               </div>
             )}
           </div>
@@ -801,9 +766,5 @@ const ProjectContent = React.memo(({ onClose }) => {
     </Grid>
   );
 });
-
-ProjectContent.propTypes = {
-  onClose: PropTypes.func.isRequired,
-};
 
 export default ProjectContent;

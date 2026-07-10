@@ -6,7 +6,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Provider } from 'react-redux';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router';
 import { ThemeProvider, ToasterProvider } from '@gravity-ui/uikit';
 // eslint-disable-next-line import/no-unresolved
 import { toaster } from '@gravity-ui/uikit/toaster-singleton';
@@ -15,7 +15,7 @@ import { ReduxRouter } from '../../lib/redux-router';
 import Paths from '../../constants/Paths';
 import Login from './Login';
 import Core from './Core';
-import NotFound from './NotFound';
+import GhostError from './GhostError';
 
 import 'react-datepicker/dist/react-datepicker.css';
 import 'photoswipe/dist/photoswipe.css';
@@ -37,7 +37,7 @@ function Root({ store, history }) {
               <Route path={Paths.PROJECTS} element={<Core />} />
               <Route path={Paths.BOARDS} element={<Core />} />
               <Route path={Paths.CARDS} element={<Core />} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<GhostError />} />
             </Routes>
           </ToasterProvider>
         </ThemeProvider>

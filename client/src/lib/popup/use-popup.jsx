@@ -4,7 +4,7 @@
  */
 
 import { ResizeObserver } from '@juggle/resize-observer';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Button, Popup as SemanticUIPopup } from 'semantic-ui-react';
 
@@ -12,22 +12,26 @@ import styles from './Popup.module.css';
 
 export default (Step, { position, onOpen, onClose } = {}) => {
   return useMemo(() => {
-    const Popup = React.memo(({ children, ...stepProps }) => {
-      const [isOpened, setIsOpened] = useState(false);
+    const Popup = React.forwardRef(({ children, ...stepProps }, ref) => {
+      const [stepParams, setStepParams] = useState(null);
 
       const wrapperRef = useRef(null);
       const resizeObserverRef = useRef(null);
 
-      const handleOpen = useCallback(() => {
-        setIsOpened(true);
+      const open = useCallback((params = {}) => {
+        setStepParams(params);
 
         if (onOpen) {
           onOpen();
         }
       }, []);
 
+      const handleOpen = useCallback(() => {
+        open();
+      }, [open]);
+
       const handleClose = useCallback(() => {
-        setIsOpened(false);
+        setStepParams(null);
       }, []);
 
       const handleMouseDown = useCallback((event) => {
@@ -73,6 +77,14 @@ export default (Step, { position, onOpen, onClose } = {}) => {
         resizeObserverRef.current.observe(element);
       }, []);
 
+      useImperativeHandle(
+        ref,
+        () => ({
+          open,
+        }),
+        [open],
+      );
+
       const tigger = React.cloneElement(children, {
         onClick: handleTriggerClick,
       });
@@ -84,7 +96,7 @@ export default (Step, { position, onOpen, onClose } = {}) => {
           ref={wrapperRef}
           trigger={tigger}
           on="click"
-          open={isOpened}
+          open={!!stepParams}
           position={position || 'bottom left'}
           popperModifiers={[
             {
@@ -106,7 +118,7 @@ export default (Step, { position, onOpen, onClose } = {}) => {
           <div ref={handleContentRef}>
             <Button icon="close" onClick={handleClose} className={styles.closeButton} />
             {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-            <Step {...stepProps} onClose={handleClose} />
+            <Step {...stepProps} {...stepParams} onClose={handleClose} />
           </div>
         </SemanticUIPopup>
       );
@@ -116,6 +128,6 @@ export default (Step, { position, onOpen, onClose } = {}) => {
       children: PropTypes.node.isRequired,
     };
 
-    return Popup;
+    return React.memo(Popup);
   }, [position, onOpen, onClose]);
 };

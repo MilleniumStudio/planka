@@ -8,19 +8,28 @@
  * https://sailsjs.com/config/custom
  */
 
+const path = require('path');
 const { URL } = require('url');
+const bytes = require('bytes');
 const sails = require('sails');
 
 const version = require('../version');
 
 const envToNumber = (value) => {
+  if (!value) {
+    return null;
+  }
+
   const number = parseInt(value, 10);
   return Number.isNaN(number) ? null : number;
 };
 
+const envToBytes = (value) => bytes(value);
+
 const envToArray = (value) => (value ? value.split(',') : []);
 
-const parsedBasedUrl = new URL(process.env.BASE_URL);
+const baseUrl = envToArray(process.env.BASE_URL)[0];
+const parsedBasedUrl = new URL(baseUrl);
 
 module.exports.custom = {
   /**
@@ -31,27 +40,31 @@ module.exports.custom = {
 
   version,
 
-  baseUrl: process.env.BASE_URL,
-  baseUrlPath: parsedBasedUrl.pathname,
+  baseUrl,
+  baseUrlPath: parsedBasedUrl.pathname.replace(/\/$/, ''), // Remove trailing slash
   baseUrlSecure: parsedBasedUrl.protocol === 'https:',
 
-  tokenExpiresIn: parseInt(process.env.TOKEN_EXPIRES_IN, 10) || 365,
+  maxUploadFileSize: envToBytes(process.env.MAX_UPLOAD_FILE_SIZE),
+  tokenExpiresIn: (parseInt(process.env.TOKEN_EXPIRES_IN, 10) || 365) * 24 * 60 * 60,
+
+  storageLimit: envToBytes(process.env.STORAGE_LIMIT),
+  activeUsersLimit: envToNumber(process.env.ACTIVE_USERS_LIMIT),
 
   // Location to receive uploaded files in. Default (non-string value) is a Sails-specific location.
   uploadsTempPath: null,
-  uploadsBasePath: sails.config.appPath,
+  uploadsBasePath: path.join(sails.config.appPath, 'data'),
 
-  preloadedFaviconsPathSegment: 'public/preloaded-favicons',
-  faviconsPathSegment: 'public/favicons',
-  userAvatarsPathSegment: 'public/user-avatars',
-  backgroundImagesPathSegment: 'public/background-images',
+  faviconsPathSegment: 'protected/favicons',
+  userAvatarsPathSegment: 'protected/user-avatars',
+  backgroundImagesPathSegment: 'protected/background-images',
   attachmentsPathSegment: 'private/attachments',
 
   defaultAdminEmail:
     process.env.DEFAULT_ADMIN_EMAIL && process.env.DEFAULT_ADMIN_EMAIL.toLowerCase(),
 
-  activeUsersLimit: envToNumber(process.env.ACTIVE_USERS_LIMIT),
   showDetailedAuthErrors: process.env.SHOW_DETAILED_AUTH_ERRORS === 'true',
+  outgoingProxy: process.env.OUTGOING_PROXY,
+  swaggerExposed: process.env.SWAGGER_EXPOSED === 'true',
 
   s3Endpoint: process.env.S3_ENDPOINT,
   s3Region: process.env.S3_REGION,
@@ -59,10 +72,12 @@ module.exports.custom = {
   s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
   s3Bucket: process.env.S3_BUCKET,
   s3ForcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+  s3RequestChecksumCalculation: process.env.S3_REQUEST_CHECKSUM_CALCULATION,
 
   oidcIssuer: process.env.OIDC_ISSUER,
   oidcClientId: process.env.OIDC_CLIENT_ID,
   oidcClientSecret: process.env.OIDC_CLIENT_SECRET,
+  oidcUseOauthCallback: process.env.OIDC_USE_OAUTH_CALLBACK === 'true',
   oidcIdTokenSignedResponseAlg: process.env.OIDC_ID_TOKEN_SIGNED_RESPONSE_ALG,
   oidcUserinfoSignedResponseAlg: process.env.OIDC_USERINFO_SIGNED_RESPONSE_ALG,
   oidcScopes: process.env.OIDC_SCOPES || 'openid email profile',
@@ -79,20 +94,29 @@ module.exports.custom = {
   oidcIgnoreUsername: process.env.OIDC_IGNORE_USERNAME === 'true',
   oidcIgnoreRoles: process.env.OIDC_IGNORE_ROLES === 'true',
   oidcEnforced: process.env.OIDC_ENFORCED === 'true',
+  oidcTimeout: envToNumber(process.env.OIDC_TIMEOUT),
+  oidcDebug: process.env.OIDC_DEBUG === 'true',
 
   // TODO: move client base url to environment variable?
   oidcRedirectUri: `${
-    sails.config.environment === 'production' ? process.env.BASE_URL : 'http://localhost:3000'
+    sails.config.environment === 'production' ? baseUrl : 'http://localhost:3000'
   }/oidc-callback`,
 
   smtpHost: process.env.SMTP_HOST,
   smtpPort: process.env.SMTP_PORT || 587,
   smtpName: process.env.SMTP_NAME,
   smtpSecure: process.env.SMTP_SECURE === 'true',
+  smtpTlsRejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
   smtpUser: process.env.SMTP_USER,
   smtpPassword: process.env.SMTP_PASSWORD,
   smtpFrom: process.env.SMTP_FROM,
-  smtpTlsRejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== 'false',
 
-  webhooks: JSON.parse(process.env.WEBHOOKS || '[]'), // TODO: validate structure
+  gravatarBaseUrl: process.env.GRAVATAR_BASE_URL,
+
+  /* Internal */
+
+  internalAccessToken: process.env.INTERNAL_ACCESS_TOKEN,
+  termsType: process.env.TERMS_TYPE || 'custom',
+  customerPanelUrl: process.env.CUSTOMER_PANEL_URL,
+  demoMode: process.env.DEMO_MODE === 'true',
 };

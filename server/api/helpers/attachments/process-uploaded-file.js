@@ -5,12 +5,12 @@
 
 const fsPromises = require('fs').promises;
 const { rimraf } = require('rimraf');
+const { fileTypeFromFile } = require('file-type');
 const { getEncoding } = require('istextorbinary');
-const mime = require('mime');
 const sharp = require('sharp');
 
 const filenamify = require('../../../utils/filenamify');
-const { MAX_SIZE_IN_BYTES_TO_GET_ENCODING } = require('../../../constants');
+const { MAX_SIZE_TO_GET_ENCODING, MAX_SIZE_TO_PROCESS_AS_IMAGE } = require('../../../constants');
 
 module.exports = {
   inputs: {
@@ -23,17 +23,23 @@ module.exports = {
   async fn(inputs) {
     const fileManager = sails.hooks['file-manager'].getInstance();
 
-    const { id: fileReferenceId } = await FileReference.create().fetch();
-    const dirPathSegment = `${sails.config.custom.attachmentsPathSegment}/${fileReferenceId}`;
     const filename = filenamify(inputs.file.filename);
+    const fileType = await fileTypeFromFile(inputs.file.fd);
+    const { mime: mimeType = null } = fileType || {};
+    const { size } = inputs.file;
 
-    const mimeType = mime.getType(filename);
-    const sizeInBytes = inputs.file.size;
+    const { id: uploadedFileId } = await UploadedFile.qm.createOne({
+      mimeType,
+      size,
+      type: UploadedFile.Types.ATTACHMENT,
+    });
+
+    const dirPathSegment = `${sails.config.custom.attachmentsPathSegment}/${uploadedFileId}`;
 
     let buffer;
     let encoding = null;
 
-    if (sizeInBytes <= MAX_SIZE_IN_BYTES_TO_GET_ENCODING) {
+    if (size <= MAX_SIZE_TO_GET_ENCODING) {
       try {
         buffer = await fsPromises.readFile(inputs.file.fd);
       } catch (error) {
@@ -52,16 +58,16 @@ module.exports = {
     );
 
     const data = {
-      fileReferenceId,
+      uploadedFileId,
       filename,
       mimeType,
-      sizeInBytes,
+      size,
       encoding,
       image: null,
     };
 
-    if (!['image/svg+xml', 'application/pdf'].includes(mimeType)) {
-      let image = sharp(buffer || filePath, {
+    if (mimeType && mimeType.startsWith('image/') && size <= MAX_SIZE_TO_PROCESS_AS_IMAGE) {
+      let image = sharp(buffer || filePath || inputs.file.fd, {
         animated: true,
       });
 
@@ -81,40 +87,41 @@ module.exports = {
         const thumbnailsPathSegment = `${dirPathSegment}/thumbnails`;
         const thumbnailsExtension = metadata.format === 'jpeg' ? 'jpg' : metadata.format;
 
+        const outside360 = image
+          .clone()
+          .resize(360, 360, {
+            fit: 'outside',
+            withoutEnlargement: true,
+          })
+          .png({
+            quality: 75,
+            force: false,
+          });
+
+        const outside720 = image
+          .clone()
+          .resize(720, 720, {
+            fit: 'outside',
+            withoutEnlargement: true,
+          })
+          .png({
+            quality: 75,
+            force: false,
+          });
+
         try {
-          const outside360Buffer = await image
-            .resize(360, 360, {
-              fit: 'outside',
-              withoutEnlargement: true,
-            })
-            .png({
-              quality: 75,
-              force: false,
-            })
-            .toBuffer();
-
-          await fileManager.save(
-            `${thumbnailsPathSegment}/outside-360.${thumbnailsExtension}`,
-            outside360Buffer,
-            inputs.file.type,
-          );
-
-          const outside720Buffer = await image
-            .resize(720, 720, {
-              fit: 'outside',
-              withoutEnlargement: true,
-            })
-            .png({
-              quality: 75,
-              force: false,
-            })
-            .toBuffer();
-
-          await fileManager.save(
-            `${thumbnailsPathSegment}/outside-720.${thumbnailsExtension}`,
-            outside720Buffer,
-            inputs.file.type,
-          );
+          await Promise.all([
+            fileManager.save(
+              `${thumbnailsPathSegment}/outside-360.${thumbnailsExtension}`,
+              outside360,
+              inputs.file.type,
+            ),
+            fileManager.save(
+              `${thumbnailsPathSegment}/outside-720.${thumbnailsExtension}`,
+              outside720,
+              inputs.file.type,
+            ),
+          ]);
 
           data.image = {
             width,

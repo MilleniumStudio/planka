@@ -5,6 +5,13 @@
 
 import ActionTypes from '../constants/ActionTypes';
 
+const handleUsersReset = (users) => ({
+  type: ActionTypes.USERS_RESET_HANDLE,
+  payload: {
+    users,
+  },
+});
+
 const createUser = (data) => ({
   type: ActionTypes.USER_CREATE,
   payload: {
@@ -65,8 +72,10 @@ const handleUserUpdate = (
   user,
   projectIds,
   boardIds,
+  bootstrap,
   config,
   board,
+  webhooks,
   users,
   projects,
   projectManagers,
@@ -93,8 +102,10 @@ const handleUserUpdate = (
     user,
     projectIds,
     boardIds,
+    bootstrap,
     config,
     board,
+    webhooks,
     users,
     projects,
     projectManagers,
@@ -231,6 +242,58 @@ updateUserAvatar.failure = (id, error) => ({
   },
 });
 
+const createUserApiKey = (id) => ({
+  type: ActionTypes.USER_API_KEY_CREATE,
+  payload: {
+    id,
+  },
+});
+
+createUserApiKey.success = (user, apiKey) => ({
+  type: ActionTypes.USER_API_KEY_CREATE__SUCCESS,
+  payload: {
+    user,
+    apiKey,
+  },
+});
+
+createUserApiKey.failure = (id, error) => ({
+  type: ActionTypes.USER_API_KEY_CREATE__FAILURE,
+  payload: {
+    id,
+    error,
+  },
+});
+
+const deleteUserApiKey = (id) => ({
+  type: ActionTypes.USER_API_KEY_DELETE,
+  payload: {
+    id,
+  },
+});
+
+deleteUserApiKey.success = (user) => ({
+  type: ActionTypes.USER_API_KEY_DELETE__SUCCESS,
+  payload: {
+    user,
+  },
+});
+
+deleteUserApiKey.failure = (id, error) => ({
+  type: ActionTypes.USER_API_KEY_DELETE__FAILURE,
+  payload: {
+    id,
+    error,
+  },
+});
+
+const clearUserApiKeyValue = (id) => ({
+  type: ActionTypes.USER_API_KEY_VALUE_CLEAR,
+  payload: {
+    id,
+  },
+});
+
 const deleteUser = (id) => ({
   type: ActionTypes.USER_DELETE,
   payload: {
@@ -343,6 +406,7 @@ const removeUserFromBoardFilter = (id, boardId, currentListId) => ({
 });
 
 export default {
+  handleUsersReset,
   createUser,
   handleUserCreate,
   clearUserCreateError,
@@ -355,6 +419,9 @@ export default {
   updateUserUsername,
   clearUserUsernameUpdateError,
   updateUserAvatar,
+  createUserApiKey,
+  deleteUserApiKey,
+  clearUserApiKeyValue,
   deleteUser,
   handleUserDelete,
   addUserToCard,

@@ -5,7 +5,6 @@
 
 import upperFirst from 'lodash/upperFirst';
 import camelCase from 'lodash/camelCase';
-import initials from 'initials';
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
@@ -13,7 +12,7 @@ import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 
 import selectors from '../../../selectors';
-import { StaticUserIds } from '../../../constants/StaticUsers';
+import { isUserStatic } from '../../../utils/record-helpers';
 
 import styles from './UserAvatar.module.scss';
 
@@ -35,6 +34,19 @@ const COLORS = [
   'midnight-blue',
 ];
 
+const getInitials = (name) => {
+  const words = name
+    .trim()
+    .split(/[\s-]+/)
+    .filter(Boolean);
+  if (words.length === 0) return '';
+  if (words.length === 1) return [...words[0]].slice(0, 2).join('');
+  return words
+    .slice(0, 2)
+    .map((word) => [...word][0])
+    .join('');
+};
+
 const getColor = (name) => {
   let sum = 0;
   for (let i = 0; i < name.length; i += 1) {
@@ -52,10 +64,17 @@ const UserAvatar = React.memo(
 
     const [t] = useTranslation();
 
+    let avatarUrl = null;
+    if (user.avatar) {
+      avatarUrl = user.avatar.thumbnailUrls.cover180;
+    } else if (user.gravatarUrl) {
+      avatarUrl = user.gravatarUrl;
+    }
+
     const contentNode = (
       <span
         title={
-          user.id === StaticUserIds.DELETED
+          isUserStatic(user)
             ? t(`common.${user.name}`, {
                 context: 'title',
               })
@@ -65,13 +84,13 @@ const UserAvatar = React.memo(
           styles.wrapper,
           styles[`wrapper${upperFirst(size)}`],
           onClick && styles.wrapperHoverable,
-          !user.avatar && styles[`background${upperFirst(camelCase(getColor(user.name)))}`],
+          !avatarUrl && styles[`background${upperFirst(camelCase(getColor(user.name)))}`],
         )}
         style={{
-          background: user.avatar && `url("${user.avatar.thumbnailUrls.cover180}") center / cover`,
+          background: avatarUrl && `url("${avatarUrl}") center / cover`,
         }}
       >
-        {!user.avatar && <span className={styles.initials}>{initials(user.name).slice(0, 2)}</span>}
+        {!avatarUrl && <span className={styles.initials}>{getInitials(user.name)}</span>}
         {withCreatorIndicator && <span className={styles.creatorIndicator}>+</span>}
       </span>
     );

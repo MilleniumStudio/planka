@@ -45,16 +45,7 @@ export const makeSelectUserById = () =>
 
 export const selectUserById = makeSelectUserById();
 
-export const selectUsersExceptCurrent = createSelector(
-  orm,
-  (state) => selectCurrentUserId(state),
-  ({ User }, id) =>
-    User.getAllQuerySet()
-      .exclude({
-        id,
-      })
-      .toRefArray(),
-);
+export const selectUsers = createSelector(orm, ({ User }) => User.getAllQuerySet().toRefArray());
 
 export const selectActiveUsers = createSelector(orm, ({ User }) =>
   User.getActiveQuerySet().toRefArray(),
@@ -197,6 +188,35 @@ export const selectFavoriteProjectIdsForCurrentUser = createSelector(
   },
 );
 
+export const selectProjectsToBoardsWithEditorRightsForCurrentUser = createSelector(
+  orm,
+  (state) => selectCurrentUserId(state),
+  ({ User }, id) => {
+    if (!id) {
+      return id;
+    }
+
+    const userModel = User.withId(id);
+
+    if (!userModel) {
+      return userModel;
+    }
+
+    return userModel.getMembershipProjectsModelArray().map((projectModel) => ({
+      ...projectModel.ref,
+      boards: projectModel.getBoardsModelArrayForUserWithId(id).flatMap((boardModel) => {
+        const boardMembersipModel = boardModel.getMembershipModelByUserId(id);
+
+        if (boardMembersipModel.role !== BoardMembershipRoles.EDITOR) {
+          return [];
+        }
+
+        return boardModel.ref;
+      }),
+    }));
+  },
+);
+
 export const selectProjectsToListsWithEditorRightsForCurrentUser = createSelector(
   orm,
   (state) => selectCurrentUserId(state),
@@ -325,7 +345,7 @@ export default {
   makeSelectUserById,
   selectUserById,
   selectCurrentUserId,
-  selectUsersExceptCurrent,
+  selectUsers,
   selectActiveUsers,
   selectActiveUsersTotal,
   selectActiveAdminOrProjectOwnerUsers,
@@ -334,6 +354,7 @@ export default {
   selectFilteredProjectIdsForCurrentUser,
   selectFilteredProjctIdsByGroupForCurrentUser,
   selectFavoriteProjectIdsForCurrentUser,
+  selectProjectsToBoardsWithEditorRightsForCurrentUser,
   selectProjectsToListsWithEditorRightsForCurrentUser,
   selectBoardIdsForCurrentUser,
   selectNotificationIdsForCurrentUser,

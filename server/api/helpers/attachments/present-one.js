@@ -20,7 +20,7 @@ module.exports = {
         ...inputs.record,
         data: {
           ..._.omit(inputs.record.data, [
-            'fileReferenceId',
+            'uploadedFileId',
             'filename',
             'image.thumbnailsExtension',
           ]),
@@ -38,8 +38,7 @@ module.exports = {
       if (sails.helpers.utils.isPreloadedFaviconExists(inputs.record.data.hostname)) {
         faviconUrl = `${sails.config.custom.baseUrl}/preloaded-favicons/${faviconFilename}`;
       } else {
-        const fileManager = sails.hooks['file-manager'].getInstance();
-        faviconUrl = `${fileManager.buildUrl(`${sails.config.custom.faviconsPathSegment}/${faviconFilename}`)}`;
+        faviconUrl = `${sails.config.custom.baseUrl}/favicons/${faviconFilename}`;
       }
 
       data = {

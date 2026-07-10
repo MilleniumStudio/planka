@@ -3,6 +3,45 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /comments/{id}:
+ *   delete:
+ *     summary: Delete comment
+ *     description: Deletes a comment. Can be deleted by the comment author (with comment permissions) or project manager.
+ *     tags:
+ *       - Comments
+ *     operationId: deleteComment
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the comment to delete
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     responses:
+ *       200:
+ *         description: Comment deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/Comment'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {
@@ -44,6 +83,10 @@ module.exports = {
     const isProjectManager = await sails.helpers.users.isProjectManager(currentUser.id, project.id);
 
     if (!isProjectManager) {
+      if (comment.userId !== currentUser.id) {
+        throw Errors.NOT_ENOUGH_RIGHTS;
+      }
+
       const boardMembership = await BoardMembership.qm.getOneByBoardIdAndUserId(
         board.id,
         currentUser.id,
@@ -54,10 +97,6 @@ module.exports = {
       }
 
       if (boardMembership.role !== BoardMembership.Roles.EDITOR) {
-        if (comment.userId !== currentUser.id) {
-          throw Errors.NOT_ENOUGH_RIGHTS;
-        }
-
         if (!boardMembership.canComment) {
           throw Errors.NOT_ENOUGH_RIGHTS;
         }

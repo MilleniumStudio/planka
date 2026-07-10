@@ -10,6 +10,7 @@ import EntryActionTypes from '../../../constants/EntryActionTypes';
 
 export default function* usersWatchers() {
   yield all([
+    takeEvery(EntryActionTypes.USERS_RESET_HANDLE, () => services.handleUsersReset()),
     takeEvery(EntryActionTypes.USER_CREATE, ({ payload: { data } }) => services.createUser(data)),
     takeEvery(EntryActionTypes.USER_CREATE_HANDLE, ({ payload: { user } }) =>
       services.handleUserCreate(user),
@@ -63,8 +64,20 @@ export default function* usersWatchers() {
     takeEvery(EntryActionTypes.CURRENT_USER_USERNAME_UPDATE_ERROR_CLEAR, () =>
       services.clearCurrentUserUsernameUpdateError(),
     ),
+    takeEvery(EntryActionTypes.USER_AVATAR_UPDATE, ({ payload: { id, data } }) =>
+      services.updateUserAvatar(id, data),
+    ),
     takeEvery(EntryActionTypes.CURRENT_USER_AVATAR_UPDATE, ({ payload: { data } }) =>
       services.updateCurrentUserAvatar(data),
+    ),
+    takeEvery(EntryActionTypes.USER_API_KEY_CREATE, ({ payload: { id } }) =>
+      services.createUserApiKey(id),
+    ),
+    takeEvery(EntryActionTypes.USER_API_KEY_DELETE, ({ payload: { id } }) =>
+      services.deleteUserApiKey(id),
+    ),
+    takeEvery(EntryActionTypes.USER_API_KEY_VALUE_CLEAR, ({ payload: { id } }) =>
+      services.clearUserApiKeyValue(id),
     ),
     takeEvery(EntryActionTypes.USER_DELETE, ({ payload: { id } }) => services.deleteUser(id)),
     takeEvery(EntryActionTypes.USER_DELETE_HANDLE, ({ payload: { user } }) =>

@@ -5,12 +5,17 @@
 
 :global(#app) {
   .menu {
-    margin: -7px -12px -5px;
+    margin: 0 -12px -5px;
     width: calc(100% + 24px);
   }
 
   .menuItem {
     margin: 0;
     padding-left: 14px;
+  }
+
+  .menuItemIcon {
+    float: left;
+    margin: 0 0.5em 0 0;
   }
 }

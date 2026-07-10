@@ -23,7 +23,7 @@ const buildBodyByFormat = (board, card, action, actorUser, t) => {
 
   switch (action.type) {
     case Action.Types.CREATE_CARD: {
-      const listName = sails.helpers.lists.makeName(action.data.list);
+      const listName = sails.helpers.lists.resolveName(action.data.list, t);
 
       return {
         text: t('%s created %s in %s on %s', actorUser.name, card.name, listName, board.name),
@@ -44,8 +44,8 @@ const buildBodyByFormat = (board, card, action, actorUser, t) => {
       };
     }
     case Action.Types.MOVE_CARD: {
-      const fromListName = sails.helpers.lists.makeName(action.data.fromList);
-      const toListName = sails.helpers.lists.makeName(action.data.toList);
+      const fromListName = sails.helpers.lists.resolveName(action.data.fromList, t);
+      const toListName = sails.helpers.lists.resolveName(action.data.toList, t);
 
       return {
         text: t(
@@ -105,6 +105,10 @@ module.exports = {
       type: 'ref',
       required: true,
     },
+    webhooks: {
+      type: 'ref',
+      required: true,
+    },
     request: {
       type: 'ref',
     },
@@ -130,7 +134,8 @@ module.exports = {
     );
 
     sails.helpers.utils.sendWebhooks.with({
-      event: 'actionCreate',
+      webhooks: inputs.webhooks,
+      event: Webhook.Events.ACTION_CREATE,
       buildData: () => ({
         item: action,
         included: {
@@ -149,15 +154,16 @@ module.exports = {
           await sails.helpers.notifications.createOne.with({
             values: {
               action,
+              userId: action.data.user.id,
               type: action.type,
               data: action.data,
-              userId: action.data.user.id,
               creatorUser: values.user,
               card: values.card,
             },
             project: inputs.project,
             board: inputs.board,
             list: inputs.list,
+            webhooks: inputs.webhooks,
           });
         }
       } else {
@@ -173,23 +179,20 @@ module.exports = {
 
         const notifiableUserIds = _.union(cardSubscriptionUserIds, boardSubscriptionUserIds);
 
-        await Promise.all(
-          notifiableUserIds.map((userId) =>
-            sails.helpers.notifications.createOne.with({
-              values: {
-                userId,
-                action,
-                type: action.type,
-                data: action.data,
-                creatorUser: values.user,
-                card: values.card,
-              },
-              project: inputs.project,
-              board: inputs.board,
-              list: inputs.list,
-            }),
-          ),
-        );
+        await sails.helpers.notifications.createMany.with({
+          arrayOfValues: notifiableUserIds.map((userId) => ({
+            userId,
+            action,
+            type: action.type,
+            data: action.data,
+            creatorUser: values.user,
+            card: values.card,
+          })),
+          project: inputs.project,
+          board: inputs.board,
+          list: inputs.list,
+          webhooks: inputs.webhooks,
+        });
       }
     }
 

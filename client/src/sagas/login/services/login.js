@@ -10,13 +10,15 @@ import { replace } from '../../../lib/redux-router';
 import selectors from '../../../selectors';
 import actions from '../../../actions';
 import api from '../../../api';
+import i18n from '../../../i18n';
 import { setAccessToken } from '../../../utils/access-token-storage';
 import Paths from '../../../constants/Paths';
+import AccessTokenSteps from '../../../constants/AccessTokenSteps';
 
 export function* initializeLogin() {
-  const { item: config } = yield call(api.getConfig); // TODO: handle error
+  const { item: bootstrap } = yield call(api.getBootstrap); // TODO: handle error
 
-  yield put(actions.initializeLogin(config));
+  yield put(actions.initializeLogin(bootstrap));
 }
 
 export function* authenticate(data) {
@@ -26,7 +28,12 @@ export function* authenticate(data) {
   try {
     ({ item: accessToken } = yield call(api.createAccessToken, data));
   } catch (error) {
-    yield put(actions.authenticate.failure(error));
+    let terms;
+    if (error.step === AccessTokenSteps.ACCEPT_TERMS) {
+      ({ item: terms } = yield call(api.getTerms, i18n.resolvedLanguage));
+    }
+
+    yield put(actions.authenticate.failure(error, terms));
     return;
   }
 
@@ -35,7 +42,7 @@ export function* authenticate(data) {
 }
 
 export function* authenticateWithOidc() {
-  const oidcConfig = yield select(selectors.selectOidcConfig);
+  const oidcBootstrap = yield select(selectors.selectOidcBootstrap);
 
   const state = nanoid();
   window.localStorage.setItem('oidc-state', state);
@@ -43,7 +50,7 @@ export function* authenticateWithOidc() {
   const nonce = nanoid();
   window.localStorage.setItem('oidc-nonce', nonce);
 
-  let redirectUrl = `${oidcConfig.authorizationUrl}`;
+  let redirectUrl = `${oidcBootstrap.authorizationUrl}`;
   redirectUrl += `&state=${encodeURIComponent(state)}`;
   redirectUrl += `&nonce=${encodeURIComponent(nonce)}`;
 
@@ -99,6 +106,20 @@ export function* authenticateWithOidcCallback() {
     return;
   }
 
+  const oidcBootstrap = yield select(selectors.selectOidcBootstrap);
+
+  if (oidcBootstrap?.debug) {
+    const {
+      included: { logs },
+    } = yield call(api.debugOidc, {
+      code,
+      nonce,
+    });
+
+    yield put(actions.authenticateWithOidc.debug(logs));
+    return;
+  }
+
   let accessToken;
   try {
     ({ item: accessToken } = yield call(api.exchangeForAccessTokenWithOidc, {
@@ -106,7 +127,12 @@ export function* authenticateWithOidcCallback() {
       nonce,
     }));
   } catch (error) {
-    yield put(actions.authenticateWithOidc.failure(error));
+    let terms;
+    if (error.step === AccessTokenSteps.ACCEPT_TERMS) {
+      ({ item: terms } = yield call(api.getTerms, i18n.resolvedLanguage));
+    }
+
+    yield put(actions.authenticateWithOidc.failure(error, terms));
     return;
   }
 
@@ -118,10 +144,65 @@ export function* clearAuthenticateError() {
   yield put(actions.clearAuthenticateError());
 }
 
+export function* acceptTerms(signature) {
+  yield put(actions.acceptTerms(signature));
+
+  const { pendingToken } = yield select(selectors.selectAuthenticateForm);
+
+  let accessToken;
+  try {
+    ({ item: accessToken } = yield call(api.acceptTerms, {
+      pendingToken,
+      signature,
+      initialLanguage: i18n.resolvedLanguage,
+    }));
+  } catch (error) {
+    yield put(actions.acceptTerms.failure(error));
+    return;
+  }
+
+  yield call(setAccessToken, accessToken);
+  yield put(actions.acceptTerms.success(accessToken));
+}
+
+export function* cancelTerms() {
+  const { pendingToken } = yield select(selectors.selectAuthenticateForm);
+
+  yield put(actions.cancelTerms());
+
+  try {
+    yield call(api.revokePendingToken, {
+      pendingToken,
+    });
+  } catch (error) {
+    yield put(actions.cancelTerms.failure(error));
+    return;
+  }
+
+  yield put(actions.cancelTerms.success(pendingToken));
+}
+
+export function* updateTermsLanguage(value) {
+  yield put(actions.updateTermsLanguage(value));
+
+  let terms;
+  try {
+    ({ item: terms } = yield call(api.getTerms, value));
+  } catch (error) {
+    yield put(actions.updateTermsLanguage.failure(error));
+    return;
+  }
+
+  yield put(actions.updateTermsLanguage.success(terms));
+}
+
 export default {
   initializeLogin,
   authenticate,
   authenticateWithOidc,
   authenticateWithOidcCallback,
   clearAuthenticateError,
+  acceptTerms,
+  cancelTerms,
+  updateTermsLanguage,
 };

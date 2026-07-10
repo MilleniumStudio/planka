@@ -3,6 +3,59 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /cards/{cardId}/custom-field-value/customFieldGroupId:{customFieldGroupId}:customFieldId:{customFieldId}:
+ *   delete:
+ *     summary: Delete custom field value
+ *     description: Deletes a custom field value for a specific card. Requires board editor permissions.
+ *     tags:
+ *       - Custom Field Values
+ *     operationId: deleteCustomFieldValue
+ *     parameters:
+ *       - name: cardId
+ *         in: path
+ *         required: true
+ *         description: ID of the card to delete the custom field value from
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *       - name: customFieldGroupId
+ *         in: path
+ *         required: true
+ *         description: ID of the custom field group the value belongs to
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091265"
+ *       - name: customFieldId
+ *         in: path
+ *         required: true
+ *         description: ID of the custom field the value belongs to
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091266"
+ *     responses:
+ *       200:
+ *         description: Custom field value deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/CustomFieldValue'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {

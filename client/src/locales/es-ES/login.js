@@ -1,20 +1,35 @@
 export default {
   translation: {
     common: {
-      emailAlreadyInUse: 'El correo ya está en uso',
-      emailOrUsername: 'Correo o nombre de usuario',
-      invalidEmailOrUsername: 'Correo o nombre de usuario incorrecto',
-      invalidPassword: 'Contraseña incorrecta',
+      activeUsersLimitReached: 'Se ha alcanzado el límite de usuarios activos',
+      adminLoginRequiredToInitializeInstance:
+        'Se requiere inicio de sesión de administrador para inicializar la instancia',
+      emailAlreadyInUse: 'Correo electrónico ya en uso',
+      emailOrUsername: 'Correo electrónico o nombre de usuario',
+      invalidCredentials: 'Credenciales no válidas',
+      invalidEmailOrUsername: 'Correo electrónico o nombre de usuario no válido',
+      invalidPassword: 'Contraseña no válida',
+      logIn_title: 'Iniciar sesión',
       noInternetConnection: 'Sin conexión a internet',
+      or: 'O',
       pageNotFound_title: 'Página no encontrada',
       password: 'Contraseña',
-      serverConnectionFailed: 'Conexión con el servidor fallida',
-      unknownError: 'Error desconocido, intenta más tarde',
-      usernameAlreadyInUse: 'El nombre de usuario ya está en uso',
+      poweredByPlanka: 'Desarrollado con <1>PLANKA</1>',
+      serverConnectionFailed: 'Error de conexión con el servidor',
+      unknownError: 'Error desconocido, inténtalo más tarde',
+      useSingleSignOn: 'Usar inicio de sesión único',
+      usernameAlreadyInUse: 'Nombre de usuario ya en uso',
+      whoops_title: '¡Ups!',
     },
 
     action: {
+      cancelAndClose: 'Cancelar y cerrar',
+      continue: 'Continuar',
+      debugSso: 'Depurar SSO',
+      goBack: 'Volver',
+      goHome: 'Ir al inicio',
       logIn: 'Iniciar sesión',
+      logInWithSso: 'Iniciar sesión con SSO',
     },
   },
 };

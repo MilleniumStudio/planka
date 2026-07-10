@@ -4,9 +4,12 @@
  */
 
 import socket from './socket';
+import bootstrap from './bootstrap';
 import login from './login';
 import core from './core';
 import modals from './modals';
+import config from './config';
+import webhooks from './webhooks';
 import users from './users';
 import projects from './projects';
 import projectManagers from './project-managers';
@@ -30,9 +33,12 @@ import notificationServices from './notification-services';
 
 export default {
   ...socket,
+  ...bootstrap,
   ...login,
   ...core,
   ...modals,
+  ...config,
+  ...webhooks,
   ...users,
   ...projects,
   ...projectManagers,

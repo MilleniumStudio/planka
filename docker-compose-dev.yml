@@ -19,7 +19,11 @@ services:
       # - LOG_LEVEL=warn
 
       # - TRUST_PROXY=true
+      # - MAX_UPLOAD_FILE_SIZE=
       # - TOKEN_EXPIRES_IN=365 # In days
+
+      # - STORAGE_LIMIT=
+      # - ACTIVE_USERS_LIMIT=
 
       # related: https://github.com/knex/knex/issues/2354
       # As knex does not pass query parameters from the connection string,
@@ -29,7 +33,8 @@ services:
       # Configure knex to accept SSL certificates
       # - KNEX_REJECT_UNAUTHORIZED_SSL_CERTIFICATE=false
 
-      # Used for per-board notifications
+      # The default application language used as a fallback when a user's language is not set.
+      # This language is also used for per-board notifications.
       # - DEFAULT_LANGUAGE=en-US
 
       # Do not comment out DEFAULT_ADMIN_EMAIL if you want to prevent this user from being edited/deleted
@@ -38,11 +43,16 @@ services:
       # - DEFAULT_ADMIN_NAME=Demo Demo
       # - DEFAULT_ADMIN_USERNAME=demo
 
-      # - ACTIVE_USERS_LIMIT=
-
       # Set to true to show more detailed authentication error messages.
       # It should not be enabled without a rate limiter for security reasons.
       # - SHOW_DETAILED_AUTH_ERRORS=false
+
+      # All outgoing HTTP requests (SMTP, webhooks, Apprise notifications, favicon fetching, etc.)
+      # will be sent through this proxy if set.
+      # - OUTGOING_PROXY=http://proxy:3128
+
+      # Set to true to expose the Swagger specification at /swagger.json
+      # - SWAGGER_EXPOSED=false
 
       # - S3_ENDPOINT=
       # - S3_REGION=
@@ -50,10 +60,12 @@ services:
       # - S3_SECRET_ACCESS_KEY=
       # - S3_BUCKET=
       # - S3_FORCE_PATH_STYLE=true
+      # - S3_REQUEST_CHECKSUM_CALCULATION=
 
       # - OIDC_ISSUER=
       # - OIDC_CLIENT_ID=
       # - OIDC_CLIENT_SECRET=
+      # - OIDC_USE_OAUTH_CALLBACK=true
       # - OIDC_ID_TOKEN_SIGNED_RESPONSE_ALG=
       # - OIDC_USERINFO_SIGNED_RESPONSE_ALG=
       # - OIDC_SCOPES=openid email profile
@@ -70,25 +82,23 @@ services:
       # - OIDC_IGNORE_USERNAME=true
       # - OIDC_IGNORE_ROLES=true
       # - OIDC_ENFORCED=true
+      # - OIDC_TIMEOUT=3500
+      # - OIDC_DEBUG=true
 
       # Email Notifications (https://nodemailer.com/smtp/)
+      # These values override and disable configuration in the UI if set.
       # - SMTP_HOST=
       # - SMTP_PORT=587
       # - SMTP_NAME=
       # - SMTP_SECURE=true
+      # - SMTP_TLS_REJECT_UNAUTHORIZED=false
       # - SMTP_USER=
       # - SMTP_PASSWORD=
       # - SMTP_FROM="Demo Demo" <demo@demo.demo>
-      # - SMTP_TLS_REJECT_UNAUTHORIZED=false
 
-      # Optional fields: accessToken, events, excludedEvents
-      # - |
-      #   WEBHOOKS=[{
-      #     "url": "http://localhost:3001",
-      #     "accessToken": "notaccesstoken",
-      #     "events": ["cardCreate", "cardUpdate", "cardDelete"],
-      #     "excludedEvents": ["notificationCreate", "notificationUpdate"]
-      #   }]
+      # Using Gravatar directly exposes user IPs and hashed emails to a third party (GDPR risk).
+      # Use a proxy you control for privacy, or leave commented out or empty to disable.
+      # - GRAVATAR_BASE_URL=https://www.gravatar.com/avatar/
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,6 +112,8 @@ services:
       - ./client:/app
     ports:
       - 3000:3000
+    environment:
+      - PROXY_TARGET=http://planka-server:1337
 
   postgres:
     image: postgres:16-alpine

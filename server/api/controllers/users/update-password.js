@@ -3,6 +3,73 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /users/{id}/password:
+ *   patch:
+ *     summary: Update user password
+ *     description: Updates a user's password. Users must provide a current password when updating their own password. Admins can update any user's password without the current password. Returns a new access token when updating own password.
+ *     tags:
+ *       - Users
+ *     operationId: updateUserPassword
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the user whose password to update
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 maxLength: 256
+ *                 description: Password (must meet password requirements)
+ *                 example: SecurePassword123!
+ *               currentPassword:
+ *                 type: string
+ *                 maxLength: 256
+ *                 description: Current password (required when updating own password)
+ *                 example: SecurePassword456!
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/User'
+ *                 included:
+ *                   type: object
+ *                   required:
+ *                     - accessToken
+ *                   properties:
+ *                     accessToken:
+ *                       type: string
+ *                       description: New acces tokens (when updating own password)
+ *                       example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ4...
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const bcrypt = require('bcrypt');
 
 const { isPassword } = require('../../../utils/validators');
@@ -69,7 +136,11 @@ module.exports = {
       throw Errors.USER_NOT_FOUND;
     }
 
-    if (user.email === sails.config.custom.defaultAdminEmail || user.isSsoUser) {
+    if (
+      user.email === sails.config.custom.defaultAdminEmail ||
+      user.isSsoUser ||
+      sails.config.custom.demoMode
+    ) {
       throw Errors.NOT_ENOUGH_RIGHTS;
     }
 
@@ -94,7 +165,7 @@ module.exports = {
       throw Errors.USER_NOT_FOUND;
     }
 
-    if (user.id === currentUser.id) {
+    if (currentSession && user.id === currentUser.id) {
       const { token: accessToken } = sails.helpers.utils.createJwtToken(
         user.id,
         user.passwordChangedAt,
@@ -111,7 +182,7 @@ module.exports = {
       return {
         item: sails.helpers.users.presentOne(user, currentUser),
         included: {
-          accessTokens: [accessToken],
+          accessToken,
         },
       };
     }

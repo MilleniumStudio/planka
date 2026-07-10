@@ -25,7 +25,7 @@ module.exports = {
   async fn(inputs) {
     const { values } = inputs;
 
-    const lists = await sails.helpers.boards.getFiniteListsById(values.board.id);
+    const lists = await sails.helpers.boards.getKanbanListsById(values.board.id);
 
     const { position, repositions } = sails.helpers.utils.insertToPositionables(
       values.position,
@@ -72,8 +72,11 @@ module.exports = {
       inputs.request,
     );
 
+    const webhooks = await Webhook.qm.getAll();
+
     sails.helpers.utils.sendWebhooks.with({
-      event: 'listCreate',
+      webhooks,
+      event: Webhook.Events.LIST_CREATE,
       buildData: () => ({
         item: list,
         included: {

@@ -6,12 +6,13 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
-import { useSelector } from 'react-redux';
+import { shallowEqual, useSelector } from 'react-redux';
 import { Icon } from 'semantic-ui-react';
 
 import selectors from '../../../selectors';
 import markdownToText from '../../../utils/markdown-to-text';
-import { BoardViews, ListTypes } from '../../../constants/Enums';
+import { BoardViews } from '../../../constants/Enums';
+import TimeAgo from '../../common/TimeAgo';
 import LabelChip from '../../labels/LabelChip';
 import CustomFieldValueChip from '../../custom-field-values/CustomFieldValueChip';
 
@@ -52,19 +53,14 @@ const StoryContent = React.memo(({ cardId }) => {
     selectNotificationsTotalByCardId(state, cardId),
   );
 
-  const listName = useSelector((state) => {
-    if (!list.name) {
-      return null;
-    }
+  const { listName, withAge } = useSelector((state) => {
+    const board = selectors.selectCurrentBoard(state);
 
-    const { view } = selectors.selectCurrentBoard(state);
-
-    if (view === BoardViews.KANBAN) {
-      return null;
-    }
-
-    return list.name;
-  });
+    return {
+      listName: list.name && (board.view === BoardViews.KANBAN ? null : list.name),
+      withAge: board.displayCardAges,
+    };
+  }, shallowEqual);
 
   const coverUrl = useSelector((state) => {
     const attachment = selectAttachmentById(state, card.coverAttachmentId);
@@ -75,8 +71,6 @@ const StoryContent = React.memo(({ cardId }) => {
     () => card.description && markdownToText(card.description),
     [card.description],
   );
-
-  const isInClosedList = list.type === ListTypes.CLOSED;
 
   return (
     <>
@@ -107,11 +101,11 @@ const StoryContent = React.memo(({ cardId }) => {
             ))}
           </span>
         )}
-        <div className={classNames(styles.name, isInClosedList && styles.nameClosed)}>
+        <div className={classNames(styles.name, card.isClosed && styles.nameClosed)}>
           {card.name}
         </div>
         {card.description && <div className={styles.descriptionText}>{descriptionText}</div>}
-        {(attachmentsTotal > 0 || notificationsTotal > 0 || listName) && (
+        {(withAge || attachmentsTotal > 0 || notificationsTotal > 0 || listName) && (
           <span className={styles.attachments}>
             {notificationsTotal > 0 && (
               <span
@@ -137,6 +131,14 @@ const StoryContent = React.memo(({ cardId }) => {
                 <span className={styles.attachmentContent}>
                   <Icon name="attach" />
                   {attachmentsTotal}
+                </span>
+              </span>
+            )}
+            {withAge && card.createdAt && (
+              <span className={classNames(styles.attachment, styles.attachmentLeft)}>
+                <span className={styles.attachmentContent}>
+                  <Icon name="history" />
+                  <TimeAgo date={card.createdAt} />
                 </span>
               </span>
             )}

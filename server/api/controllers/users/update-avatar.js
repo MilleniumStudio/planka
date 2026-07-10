@@ -3,6 +3,58 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /users/{id}/avatar:
+ *   post:
+ *     summary: Update user avatar
+ *     description: Updates a user's avatar image. Users can update their own avatar, admins can update any user's avatar.
+ *     tags:
+ *       - Users
+ *     operationId: updateUserAvatar
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the user whose avatar to update
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Avatar image file (must be an image format)
+ *     responses:
+ *       200:
+ *         description: Avatar updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       422:
+ *         $ref: '#/components/responses/UnprocessableEntity'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {
@@ -58,7 +110,7 @@ module.exports = {
 
     let files;
     try {
-      files = await sails.helpers.utils.receiveFile('file', this.req);
+      files = await sails.helpers.utils.receiveFile(this.req.file('file'));
     } catch (error) {
       return exits.uploadError(error.message); // TODO: add error
     }

@@ -11,9 +11,11 @@ const handleSocketDisconnect = () => ({
 });
 
 const handleSocketReconnect = (
+  bootstrap,
   config,
   user,
   board,
+  webhooks,
   users,
   projects,
   projectManagers,
@@ -37,9 +39,11 @@ const handleSocketReconnect = (
 ) => ({
   type: ActionTypes.SOCKET_RECONNECT_HANDLE,
   payload: {
+    bootstrap,
     config,
     user,
     board,
+    webhooks,
     users,
     projects,
     projectManagers,

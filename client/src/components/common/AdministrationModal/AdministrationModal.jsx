@@ -5,17 +5,22 @@
 
 import React, { useCallback, useState } from 'react';
 import classNames from 'classnames';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { Modal, Tab } from 'semantic-ui-react';
 
+import selectors from '../../../selectors';
 import entryActions from '../../../entry-actions';
 import { useClosableModal } from '../../../hooks';
 import UsersPane from './UsersPane';
+import SmtpPane from './SmtpPane';
+import WebhooksPane from './WebhooksPane';
 
 import styles from './AdministrationModal.module.scss';
 
 const AdministrationModal = React.memo(() => {
+  const config = useSelector(selectors.selectConfig);
+
   const dispatch = useDispatch();
   const [t] = useTranslation();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
@@ -38,6 +43,20 @@ const AdministrationModal = React.memo(() => {
       render: () => <UsersPane />,
     },
   ];
+  if (config.smtpHost !== undefined) {
+    panes.push({
+      menuItem: t('common.smtp', {
+        context: 'title',
+      }),
+      render: () => <SmtpPane />,
+    });
+  }
+  panes.push({
+    menuItem: t('common.webhooks', {
+      context: 'title',
+    }),
+    render: () => <WebhooksPane />,
+  });
 
   const isUsersPaneActive = activeTabIndex === 0;
 

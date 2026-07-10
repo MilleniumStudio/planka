@@ -3,6 +3,43 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /board-memberships/{id}:
+ *   delete:
+ *     summary: Delete board membership
+ *     description: Deletes a board membership. Users can remove their own membership, project managers can remove any membership.
+ *     tags:
+ *       - Board Memberships
+ *     operationId: deleteBoardMembership
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the board membership to delete
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     responses:
+ *       200:
+ *         description: Board membership deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/BoardMembership'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {

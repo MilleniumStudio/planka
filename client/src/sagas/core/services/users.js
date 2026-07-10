@@ -16,6 +16,17 @@ import mergeRecords from '../../../utils/merge-records';
 import { isUserAdminOrProjectOwner } from '../../../utils/record-helpers';
 import { UserRoles } from '../../../constants/Enums';
 
+export function* handleUsersReset() {
+  let users;
+  try {
+    ({ items: users } = yield call(request, api.getUsers));
+  } catch {
+    return;
+  }
+
+  yield put(actions.handleUsersReset(users));
+}
+
 export function* createUser(data) {
   yield put(actions.createUser(data));
 
@@ -68,8 +79,10 @@ export function* handleUserUpdate(user) {
   const currentUser = yield select(selectors.selectCurrentUser);
   const isCurrentUser = user.id === currentUser.id;
 
+  let bootstrap;
   let config;
   let board;
+  let webhooks;
   let users1;
   let users2;
   let users3;
@@ -101,7 +114,9 @@ export function* handleUserUpdate(user) {
     ({ items: users1 } = yield call(request, api.getUsers));
 
     if (user.role === UserRoles.ADMIN) {
+      ({ item: bootstrap } = yield call(request, api.getBootstrap));
       ({ item: config } = yield call(request, api.getConfig));
+      ({ items: webhooks } = yield call(request, api.getWebhooks));
 
       ({
         items: projects,
@@ -162,8 +177,10 @@ export function* handleUserUpdate(user) {
       user,
       projectIds,
       boardIds,
+      bootstrap,
       config,
       board,
+      webhooks,
       mergeRecords(users1, users2, users3),
       projects,
       projectManagers,
@@ -245,10 +262,10 @@ export function* updateUserPassword(id, data) {
   yield put(actions.updateUserPassword(id, data));
 
   let user;
-  let accessTokens;
+  let accessToken;
 
   try {
-    ({ item: user, included: { accessTokens } = {} } = yield call(
+    ({ item: user, included: { accessToken } = {} } = yield call(
       request,
       api.updateUserPassword,
       id,
@@ -258,8 +275,6 @@ export function* updateUserPassword(id, data) {
     yield put(actions.updateUserPassword.failure(id, error));
     return;
   }
-
-  const accessToken = accessTokens && accessTokens[0];
 
   if (accessToken) {
     yield call(setAccessToken, accessToken);
@@ -332,6 +347,45 @@ export function* updateCurrentUserAvatar(data) {
   const currentUserId = yield select(selectors.selectCurrentUserId);
 
   yield call(updateUserAvatar, currentUserId, data);
+}
+
+export function* createUserApiKey(id) {
+  yield put(actions.createUserApiKey(id));
+
+  let user;
+  let apiKey;
+
+  try {
+    ({
+      item: user,
+      included: { apiKey },
+    } = yield call(request, api.createUserApiKey, id));
+  } catch (error) {
+    yield put(actions.createUserApiKey.failure(id, error));
+    return;
+  }
+
+  yield put(actions.createUserApiKey.success(user, apiKey));
+}
+
+export function* deleteUserApiKey(id) {
+  yield put(actions.deleteUserApiKey(id));
+
+  let user;
+  try {
+    ({ item: user } = yield call(request, api.updateUser, id, {
+      apiKey: null,
+    }));
+  } catch (error) {
+    yield put(actions.deleteUserApiKey.failure(id, error));
+    return;
+  }
+
+  yield put(actions.deleteUserApiKey.success(user));
+}
+
+export function* clearUserApiKeyValue(id) {
+  yield put(actions.clearUserApiKeyValue(id));
 }
 
 export function* deleteUser(id) {
@@ -448,6 +502,7 @@ export function* removeUserFromFilterInCurrentBoard(id) {
 }
 
 export default {
+  handleUsersReset,
   createUser,
   handleUserCreate,
   clearUserCreateError,
@@ -470,6 +525,9 @@ export default {
   clearCurrentUserUsernameUpdateError,
   updateUserAvatar,
   updateCurrentUserAvatar,
+  createUserApiKey,
+  deleteUserApiKey,
+  clearUserApiKeyValue,
   deleteUser,
   handleUserDelete,
   addUserToCard,

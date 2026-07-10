@@ -2,6 +2,8 @@ export default {
   translation: {
     common: {
       activeUsersLimitReached: 'Έχει επιτευχθεί το όριο ενεργών χρηστών',
+      adminLoginRequiredToInitializeInstance:
+        'Απαιτείται σύνδεση διαχειριστή για την αρχικοποίηση της εφαρμογής',
       emailAlreadyInUse: 'Το e-mail χρησιμοποιείται ήδη',
       emailOrUsername: 'E-mail ή όνομα χρήστη',
       invalidCredentials: 'Μη έγκυρα στοιχεία σύνδεσης',
@@ -17,9 +19,15 @@ export default {
       unknownError: 'Άγνωστο σφάλμα, δοκιμάστε ξανά αργότερα',
       useSingleSignOn: 'Χρήση Single Sign-On',
       usernameAlreadyInUse: 'Το όνομα χρήστη χρησιμοποιείται ήδη',
+      whoops_title: 'Ωχ!',
     },
 
     action: {
+      cancelAndClose: 'Ακύρωση και κλείσιμο',
+      continue: 'Συνέχεια',
+      debugSso: 'Αποσφαλμάτωση SSO',
+      goBack: 'Επιστροφή',
+      goHome: 'Αρχική σελίδα',
       logIn: 'Σύνδεση',
       logInWithSso: 'Σύνδεση με SSO',
     },

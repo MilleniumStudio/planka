@@ -3,6 +3,73 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /cards/{cardId}/task-lists:
+ *   post:
+ *     summary: Create task list
+ *     description: Creates a task list within a card. Requires board editor permissions.
+ *     tags:
+ *       - Task Lists
+ *     operationId: createTaskList
+ *     parameters:
+ *       - name: cardId
+ *         in: path
+ *         required: true
+ *         description: ID of the card to create task list in
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - position
+ *               - name
+ *             properties:
+ *               position:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Position of the task list within the card
+ *                 example: 65536
+ *               name:
+ *                 type: string
+ *                 maxLength: 128
+ *                 description: Name/title of the task list
+ *                 example: Development Tasks
+ *               showOnFrontOfCard:
+ *                 type: boolean
+ *                 description: Whether to show the task list on the front of the card
+ *                 example: true
+ *               hideCompletedTasks:
+ *                 type: boolean
+ *                 description: Whether to hide completed tasks
+ *                 example: false
+ *     responses:
+ *       200:
+ *         description: Task list created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/TaskList'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {
@@ -31,6 +98,9 @@ module.exports = {
       required: true,
     },
     showOnFrontOfCard: {
+      type: 'boolean',
+    },
+    hideCompletedTasks: {
       type: 'boolean',
     },
   },
@@ -64,7 +134,7 @@ module.exports = {
       throw Errors.NOT_ENOUGH_RIGHTS;
     }
 
-    const values = _.pick(inputs, ['position', 'name', 'showOnFrontOfCard']);
+    const values = _.pick(inputs, ['position', 'name', 'showOnFrontOfCard', 'hideCompletedTasks']);
 
     const taskList = await sails.helpers.taskLists.createOne.with({
       project,

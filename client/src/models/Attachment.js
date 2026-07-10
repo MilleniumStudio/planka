@@ -6,6 +6,7 @@
 import { attr, fk } from 'redux-orm';
 
 import BaseModel from './BaseModel';
+import getFilenameAndExtension from '../utils/get-filename-and-extension';
 import ActionTypes from '../constants/ActionTypes';
 import { AttachmentTypes } from '../constants/Enums';
 
@@ -14,10 +15,7 @@ const prepareAttachment = (attachment) => {
     return attachment;
   }
 
-  const filename = attachment.data.url.split('/').pop().toLowerCase();
-
-  let extension = filename.slice((Math.max(0, filename.lastIndexOf('.')) || Infinity) + 1);
-  extension = extension ? extension.toLowerCase() : null;
+  const { filename, extension } = getFilenameAndExtension(attachment.data.url);
 
   return {
     ...attachment,
@@ -60,7 +58,9 @@ export default class extends BaseModel {
       case ActionTypes.PROJECT_UPDATE_HANDLE:
       case ActionTypes.PROJECT_MANAGER_CREATE_HANDLE:
       case ActionTypes.BOARD_MEMBERSHIP_CREATE_HANDLE:
+      case ActionTypes.LIST_UPDATE_HANDLE:
       case ActionTypes.CARD_UPDATE_HANDLE:
+      case ActionTypes.CARD_TRANSFER__FAILURE:
         if (payload.attachments) {
           payload.attachments.forEach((attachment) => {
             Attachment.upsert(prepareAttachment(attachment));
@@ -81,6 +81,7 @@ export default class extends BaseModel {
       case ActionTypes.BOARD_FETCH__SUCCESS:
       case ActionTypes.CARDS_FETCH__SUCCESS:
       case ActionTypes.CARD_CREATE_HANDLE:
+      case ActionTypes.CARD_TRANSFER__SUCCESS:
       case ActionTypes.CARD_DUPLICATE__SUCCESS:
         payload.attachments.forEach((attachment) => {
           Attachment.upsert(prepareAttachment(attachment));

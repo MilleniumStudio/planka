@@ -3,8 +3,6 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
-const { POSITION_GAP } = require('../../../constants');
-
 module.exports = {
   inputs: {
     record: {
@@ -30,6 +28,9 @@ module.exports = {
     actorUser: {
       type: 'ref',
       required: true,
+    },
+    webhooks: {
+      type: 'ref',
     },
     request: {
       type: 'ref',
@@ -97,13 +98,33 @@ module.exports = {
         throw 'coverAttachmentInValuesMustContainImage';
       }
 
-      values.coverAttachmentId = values.coverAttachment.id;
+      if (values.coverAttachment.id === inputs.record.coverAttachmentId) {
+        delete values.coverAttachment;
+      } else {
+        values.coverAttachmentId = values.coverAttachment.id;
+      }
+    }
+
+    const dueDate = _.isUndefined(values.dueDate) ? inputs.record.dueDate : values.dueDate;
+
+    if (dueDate) {
+      const isDueCompleted = _.isUndefined(values.isDueCompleted)
+        ? inputs.record.isDueCompleted
+        : values.isDueCompleted;
+
+      if (_.isNull(isDueCompleted)) {
+        values.isDueCompleted = false;
+      }
+    } else {
+      values.isDueCompleted = null;
     }
 
     let card;
     if (_.isEmpty(values)) {
       card = inputs.record;
     } else {
+      const { webhooks = await Webhook.qm.getAll() } = inputs;
+
       if (!_.isNil(values.position)) {
         const cards = await Card.qm.getByListId(list.id, {
           exceptIdOrIds: inputs.record.id,
@@ -181,200 +202,14 @@ module.exports = {
           },
         );
 
-        const boardCustomFieldGroups = await CustomFieldGroup.qm.getByBoardId(inputs.board.id);
-        const boardCustomFieldGroupIds = sails.helpers.utils.mapRecords(boardCustomFieldGroups);
-
-        const boardCustomFields =
-          await CustomField.qm.getByCustomFieldGroupIds(boardCustomFieldGroupIds);
-
-        const cardCustomFieldGroups = await CustomFieldGroup.qm.getByCardId(inputs.record.id);
-
-        let basedCardCustomFieldGroups;
-        let basedCustomFieldGroups;
-        let baseCustomFieldGroupById;
-        let customFieldsByBaseCustomFieldGroupId;
-
-        if (values.project) {
-          const basedBoardCustomFieldGroups = boardCustomFieldGroups.filter(
-            ({ baseCustomFieldGroupId }) => baseCustomFieldGroupId,
-          );
-
-          basedCardCustomFieldGroups = cardCustomFieldGroups.filter(
-            ({ baseCustomFieldGroupId }) => baseCustomFieldGroupId,
-          );
-
-          basedCustomFieldGroups = [...basedBoardCustomFieldGroups, ...basedCardCustomFieldGroups];
-
-          const baseCustomFieldGroupIds = sails.helpers.utils.mapRecords(
-            basedCustomFieldGroups,
-            'baseCustomFieldGroupId',
-            true,
-          );
-
-          const baseCustomFieldGroups =
-            await BaseCustomFieldGroup.qm.getByIds(baseCustomFieldGroupIds);
-
-          baseCustomFieldGroupById = _.keyBy(baseCustomFieldGroups, 'id');
-
-          const baseCustomFields = await CustomField.qm.getByBaseCustomFieldGroupIds(
-            Object.keys(baseCustomFieldGroupById),
-          );
-
-          customFieldsByBaseCustomFieldGroupId = _.groupBy(
-            baseCustomFields,
-            'baseCustomFieldGroupId',
-          );
-        }
-
-        let idsTotal = boardCustomFieldGroups.length + boardCustomFields.length;
-
-        if (values.project) {
-          idsTotal += basedCustomFieldGroups.reduce((result, customFieldGroup) => {
-            const customFieldsItem =
-              customFieldsByBaseCustomFieldGroupId[customFieldGroup.baseCustomFieldGroupId];
-
-            return result + (customFieldsItem ? customFieldsItem.length : 0);
-          }, 0);
-        }
-
-        const ids = await sails.helpers.utils.generateIds(idsTotal);
-
-        const nextCustomFieldGroupIdByCustomFieldGroupId = {};
-        const nextCustomFieldGroupsValues = boardCustomFieldGroups.map(
-          (customFieldGroup, index) => {
-            const id = ids.shift();
-            nextCustomFieldGroupIdByCustomFieldGroupId[customFieldGroup.id] = id;
-
-            const nextValues = {
-              ..._.pick(customFieldGroup, ['baseCustomFieldGroupId', 'name']),
-              id,
-              cardId: inputs.record.id,
-              position: POSITION_GAP * (index + 1),
-            };
-
-            if (values.project && customFieldGroup.baseCustomFieldGroupId) {
-              nextValues.baseCustomFieldGroupId = null;
-
-              if (!customFieldGroup.name) {
-                nextValues.name =
-                  baseCustomFieldGroupById[customFieldGroup.baseCustomFieldGroupId].name;
-              }
-            }
-
-            return nextValues;
-          },
-        );
-
-        if (nextCustomFieldGroupsValues.length > 0) {
-          const { position } = nextCustomFieldGroupsValues[nextCustomFieldGroupsValues.length - 1];
-
-          await Promise.all(
-            cardCustomFieldGroups.map((customFieldGroup) =>
-              CustomFieldGroup.qm.updateOne(customFieldGroup.id, {
-                position: customFieldGroup.position + position,
-              }),
-            ),
-          );
-        }
-
-        await CustomFieldGroup.qm.create(nextCustomFieldGroupsValues);
-
-        if (values.project) {
-          await CustomFieldGroup.qm.update(
-            {
-              cardId: inputs.record.id,
-              baseCustomFieldGroupId: {
-                '!=': null,
-              },
-            },
-            {
-              baseCustomFieldGroupId: null,
-            },
-          );
-
-          const unnamedCustomFieldGroups = basedCardCustomFieldGroups.filter(({ name }) => !name);
-
-          await Promise.all(
-            unnamedCustomFieldGroups.map((customFieldGroup) =>
-              CustomFieldGroup.qm.updateOne(customFieldGroup.id, {
-                name: baseCustomFieldGroupById[customFieldGroup.baseCustomFieldGroupId].name,
-              }),
-            ),
-          );
-        }
-
-        const nextCustomFieldIdByCustomFieldId = {};
-        const nextCustomFieldsValues = boardCustomFields.map((customField) => {
-          const id = ids.shift();
-          nextCustomFieldIdByCustomFieldId[customField.id] = id;
-
-          return {
-            ..._.pick(customField, ['name', 'showOnFrontOfCard', 'position']),
-            id,
-            customFieldGroupId:
-              nextCustomFieldGroupIdByCustomFieldGroupId[customField.customFieldGroupId],
-          };
-        });
-
-        if (values.project) {
-          basedCustomFieldGroups.forEach((customFieldGroup) => {
-            const customFieldsItem =
-              customFieldsByBaseCustomFieldGroupId[customFieldGroup.baseCustomFieldGroupId];
-
-            if (!customFieldsItem) {
-              return;
-            }
-
-            customFieldsItem.forEach((customField) => {
-              const id = ids.shift();
-              nextCustomFieldIdByCustomFieldId[`${customFieldGroup.id}:${customField.id}`] = id;
-
-              nextCustomFieldsValues.push({
-                ..._.pick(customField, ['name', 'showOnFrontOfCard', 'position']),
-                id,
-                customFieldGroupId:
-                  nextCustomFieldGroupIdByCustomFieldGroupId[customFieldGroup.id] ||
-                  customFieldGroup.id,
-              });
-            });
-          });
-        }
-
-        await CustomField.qm.create(nextCustomFieldsValues);
-
-        const customFieldGroupIds = boardCustomFieldGroupIds;
-        if (values.project) {
-          customFieldGroupIds.push(...sails.helpers.utils.mapRecords(basedCardCustomFieldGroups));
-        }
-
-        const customFieldValues = await CustomFieldValue.qm.getByCardId(inputs.record.id, {
-          customFieldGroupIdOrIds: customFieldGroupIds,
-        });
-
-        await Promise.all(
-          customFieldValues.map((customFieldValue) => {
-            const updateValues = {
-              customFieldGroupId:
-                nextCustomFieldGroupIdByCustomFieldGroupId[customFieldValue.customFieldGroupId],
-            };
-
-            const nextCustomFieldId =
-              nextCustomFieldIdByCustomFieldId[
-                `${customFieldValue.customFieldGroupId}:${customFieldValue.customFieldId}`
-              ] || nextCustomFieldIdByCustomFieldId[customFieldValue.customFieldId];
-
-            if (nextCustomFieldId) {
-              updateValues.customFieldId = nextCustomFieldId;
-            }
-
-            return CustomFieldValue.qm.updateOne(customFieldValue.id, updateValues);
-          }),
+        await sails.helpers.cards.detachCustomFields(
+          inputs.record.id,
+          inputs.board.id,
+          !!values.project,
         );
       }
 
       if (values.list) {
-        values.listChangedAt = new Date().toISOString();
-
         if (values.board || inputs.list.type === List.Types.TRASH) {
           values.prevListId = null;
         } else if (sails.helpers.lists.isArchiveOrTrash(values.list)) {
@@ -382,9 +217,24 @@ module.exports = {
         } else if (inputs.list.type === List.Types.ARCHIVE) {
           values.prevListId = null;
         }
+
+        const typeState = List.TYPE_STATE_BY_TYPE[values.list.type];
+
+        if (inputs.record.isClosed) {
+          if (typeState === List.TypeStates.OPENED) {
+            values.isClosed = false;
+          }
+        } else if (typeState === List.TypeStates.CLOSED) {
+          values.isClosed = true;
+        }
+
+        values.listChangedAt = new Date().toISOString();
       }
 
-      card = await Card.qm.updateOne(inputs.record.id, values);
+      const updateResult = await Card.qm.updateOne(inputs.record.id, values);
+
+      ({ card } = updateResult);
+      const { tasks } = updateResult;
 
       if (!card) {
         return card;
@@ -402,6 +252,7 @@ module.exports = {
 
             const { id } = await sails.helpers.labels.createOne.with({
               project,
+              webhooks,
               values: {
                 ..._.omit(label, ['id', 'boardId', 'createdAt', 'updatedAt']),
                 board,
@@ -442,9 +293,14 @@ module.exports = {
           inputs.request,
         );
 
-        sails.sockets.broadcast(`board:${card.boardId}`, 'cardUpdate', {
-          item: card,
-        });
+        sails.sockets.broadcast(
+          `board:${card.boardId}`,
+          'cardUpdate',
+          {
+            item: card,
+          },
+          inputs.request,
+        );
 
         // TODO: add transfer action
       } else {
@@ -459,6 +315,7 @@ module.exports = {
 
         if (values.list) {
           await sails.helpers.actions.createOne.with({
+            webhooks,
             values: {
               card,
               type: Action.Types.MOVE_CARD,
@@ -476,8 +333,35 @@ module.exports = {
         }
       }
 
+      if (tasks) {
+        const taskListIds = sails.helpers.utils.mapRecords(tasks, 'taskListId', true);
+        const taskLists = await TaskList.qm.getByIds(taskListIds);
+        const taskListById = _.keyBy(taskLists, 'id');
+
+        const cardIds = sails.helpers.utils.mapRecords(taskLists, 'cardId', true);
+        const cards = await Card.qm.getByIds(cardIds);
+        const cardById = _.keyBy(cards, 'id');
+
+        const boardIdByTaskId = tasks.reduce(
+          (result, task) => ({
+            ...result,
+            [task.id]: cardById[taskListById[task.taskListId].cardId].boardId,
+          }),
+          {},
+        );
+
+        tasks.forEach((task) => {
+          sails.sockets.broadcast(`board:${boardIdByTaskId[task.id]}`, 'taskUpdate', {
+            item: task,
+          });
+        });
+
+        // TODO: send webhooks
+      }
+
       sails.helpers.utils.sendWebhooks.with({
-        event: 'cardUpdate',
+        webhooks,
+        event: Webhook.Events.CARD_UPDATE,
         buildData: () => ({
           item: card,
           included: {

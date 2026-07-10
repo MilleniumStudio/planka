@@ -16,15 +16,16 @@ export default function* cardsWatchers() {
     takeEvery(EntryActionTypes.CARDS_UPDATE_HANDLE, ({ payload: { cards, activities } }) =>
       services.handleCardsUpdate(cards, activities),
     ),
-    takeEvery(EntryActionTypes.CARD_CREATE, ({ payload: { listId, data, autoOpen } }) =>
-      services.createCard(listId, data, autoOpen),
+    takeEvery(EntryActionTypes.CARD_CREATE, ({ payload: { listId, data, index, autoOpen } }) =>
+      services.createCard(listId, data, index, autoOpen),
+    ),
+    takeEvery(
+      EntryActionTypes.CARD_IN_CURRENT_CONTEXT_CREATE,
+      ({ payload: { data, index, autoOpen } }) =>
+        services.createCardInCurrentContext(data, index, autoOpen),
     ),
     takeEvery(EntryActionTypes.CARD_IN_CURRENT_LIST_CREATE, ({ payload: { data, autoOpen } }) =>
       services.createCardInCurrentList(data, autoOpen),
-    ),
-    takeEvery(
-      EntryActionTypes.CARD_IN_FIRST_FINITE_LIST_CREATE,
-      ({ payload: { data, autoOpen } }) => services.createCardInFirstFiniteList(data, autoOpen),
     ),
     takeEvery(EntryActionTypes.CARD_CREATE_HANDLE, ({ payload: { card } }) =>
       services.handleCardCreate(card),
@@ -66,6 +67,13 @@ export default function* cardsWatchers() {
     takeEvery(EntryActionTypes.CURRENT_CARD_DUPLICATE, ({ payload: { data } }) =>
       services.duplicateCurrentCard(data),
     ),
+    takeEvery(EntryActionTypes.CARD_COPY, ({ payload: { id } }) => services.copyCard(id)),
+    takeEvery(EntryActionTypes.CARD_CUT, ({ payload: { id } }) => services.cutCard(id)),
+    takeEvery(EntryActionTypes.CARD_PASTE, ({ payload: { listId } }) => services.pasteCard(listId)),
+    takeEvery(EntryActionTypes.CARD_IN_CURRENT_CONTEXT_PASTE, () =>
+      services.pasteCardInCurrentContext(),
+    ),
+    takeEvery(EntryActionTypes.CARD_IN_CURRENT_LIST_PASTE, () => services.pasteCardInCurrentList()),
     takeEvery(EntryActionTypes.TO_ADJACENT_CARD_GO, ({ payload: { direction } }) =>
       services.goToAdjacentCard(direction),
     ),

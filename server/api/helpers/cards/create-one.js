@@ -25,6 +25,14 @@ module.exports = {
   async fn(inputs) {
     const { values } = inputs;
 
+    if (values.dueDate) {
+      if (_.isNil(values.isDueCompleted)) {
+        values.isDueCompleted = false;
+      }
+    } else {
+      delete values.isDueCompleted;
+    }
+
     if (sails.helpers.lists.isFinite(values.list)) {
       if (_.isUndefined(values.position)) {
         throw 'positionMustBeInValues';
@@ -67,6 +75,10 @@ module.exports = {
       delete values.position;
     }
 
+    if (List.TYPE_STATE_BY_TYPE[values.list.type] === List.TypeStates.CLOSED) {
+      values.isClosed = true;
+    }
+
     const card = await Card.qm.createOne({
       ...values,
       boardId: values.board.id,
@@ -84,8 +96,11 @@ module.exports = {
       inputs.request,
     );
 
+    const webhooks = await Webhook.qm.getAll();
+
     sails.helpers.utils.sendWebhooks.with({
-      event: 'cardCreate',
+      webhooks,
+      event: Webhook.Events.CARD_CREATE,
       buildData: () => ({
         item: card,
         included: {
@@ -120,6 +135,7 @@ module.exports = {
     }
 
     await sails.helpers.actions.createOne.with({
+      webhooks,
       values: {
         card,
         type: Action.Types.CREATE_CARD,

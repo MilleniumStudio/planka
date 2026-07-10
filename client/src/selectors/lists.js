@@ -7,6 +7,7 @@ import { createSelector } from 'redux-orm';
 
 import orm from '../orm';
 import { selectPath } from './router';
+import { selectCurrentUserId } from './users';
 import { isLocalId } from '../utils/local-id';
 import { BoardContexts, ListTypes } from '../constants/Enums';
 
@@ -64,6 +65,22 @@ export const makeSelectFilteredCardIdsByListId = () =>
 
 export const selectFilteredCardIdsByListId = makeSelectFilteredCardIdsByListId();
 
+export const selectIsListWithIdAvailableForCurrentUser = createSelector(
+  orm,
+  (_, id) => id,
+  (state) => selectCurrentUserId(state),
+  ({ List, User }, id, currentUserId) => {
+    const listModel = List.withId(id);
+
+    if (!listModel) {
+      return false;
+    }
+
+    const currentUserModel = User.withId(currentUserId);
+    return listModel.isAvailableForUser(currentUserModel);
+  },
+);
+
 export const selectCurrentListId = createSelector(
   orm,
   (state) => selectPath(state).boardId,
@@ -110,7 +127,7 @@ export const selectCurrentList = createSelector(
   },
 );
 
-export const selectFirstFiniteListId = createSelector(
+export const selectFirstKanbanListId = createSelector(
   orm,
   (state) => selectPath(state).boardId,
   ({ Board }, id) => {
@@ -124,7 +141,7 @@ export const selectFirstFiniteListId = createSelector(
       return boardModel;
     }
 
-    const listModel = boardModel.getFiniteListsQuerySet().first();
+    const listModel = boardModel.getKanbanListsQuerySet().first();
     return listModel && listModel.id;
   },
 );
@@ -154,8 +171,9 @@ export default {
   selectCardIdsByListId,
   makeSelectFilteredCardIdsByListId,
   selectFilteredCardIdsByListId,
+  selectIsListWithIdAvailableForCurrentUser,
   selectCurrentListId,
   selectCurrentList,
-  selectFirstFiniteListId,
+  selectFirstKanbanListId,
   selectFilteredCardIdsForCurrentList,
 };

@@ -271,7 +271,7 @@ export const selectTrashListIdForCurrentBoard = createSelector(
   },
 );
 
-export const selectFiniteListIdsForCurrentBoard = createSelector(
+export const selectKanbanListIdsForCurrentBoard = createSelector(
   orm,
   (state) => selectPath(state).boardId,
   ({ Board }, id) => {
@@ -286,7 +286,7 @@ export const selectFiniteListIdsForCurrentBoard = createSelector(
     }
 
     return boardModel
-      .getFiniteListsQuerySet()
+      .getKanbanListsQuerySet()
       .toRefArray()
       .map((list) => list.id);
   },
@@ -311,6 +311,28 @@ export const selectAvailableListsForCurrentBoard = createSelector(
       .getListsQuerySet()
       .toRefArray()
       .filter((list) => !isListArchiveOrTrash(list));
+  },
+);
+
+export const selectCardsExceptCurrentForCurrentBoard = createSelector(
+  orm,
+  (state) => selectPath(state).boardId,
+  (state) => selectPath(state).cardId,
+  ({ Board }, id, cardId) => {
+    if (!id) {
+      return id;
+    }
+
+    const boardModel = Board.withId(id);
+
+    if (!boardModel) {
+      return boardModel;
+    }
+
+    return boardModel
+      .getCardsModelArray()
+      .filter((cardModel) => cardModel.id !== cardId)
+      .map((cardModel) => cardModel.ref);
   },
 );
 
@@ -460,8 +482,9 @@ export default {
   selectLabelsForCurrentBoard,
   selectArchiveListIdForCurrentBoard,
   selectTrashListIdForCurrentBoard,
-  selectFiniteListIdsForCurrentBoard,
+  selectKanbanListIdsForCurrentBoard,
   selectAvailableListsForCurrentBoard,
+  selectCardsExceptCurrentForCurrentBoard,
   selectFilteredCardIdsForCurrentBoard,
   selectCustomFieldGroupIdsForCurrentBoard,
   selectCustomFieldGroupsForCurrentBoard,

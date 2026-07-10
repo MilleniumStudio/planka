@@ -18,12 +18,12 @@ import styles from './UsersPane.module.scss';
 
 const UsersPane = React.memo(() => {
   const activeUsersLimit = useSelector(selectors.selectActiveUsersLimit);
-  const users = useSelector(selectors.selectUsersExceptCurrent);
   const activeUsersTotal = useSelector(selectors.selectActiveUsersTotal);
+  const users = useSelector(selectors.selectUsers);
 
   const canAdd = useSelector((state) => {
-    const oidcConfig = selectors.selectOidcConfig(state);
-    return !oidcConfig || !oidcConfig.isEnforced;
+    const oidcBootstrap = selectors.selectOidcBootstrap(state);
+    return !oidcBootstrap || !oidcBootstrap.isEnforced;
   });
 
   const [t] = useTranslation();
@@ -48,7 +48,9 @@ const UsersPane = React.memo(() => {
         return (
           user.email.includes(cleanSearch) ||
           user.name.toLowerCase().includes(cleanSearch) ||
-          (user.username && user.username.includes(cleanSearch))
+          (user.username && user.username.includes(cleanSearch)) ||
+          (user.organization && user.organization.toLowerCase().includes(cleanSearch)) ||
+          (user.apiKeyPrefix && user.apiKeyPrefix.toLowerCase().includes(cleanSearch))
         );
       }),
     [users, isDeactivatedVisible, cleanSearch],
@@ -81,9 +83,8 @@ const UsersPane = React.memo(() => {
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell />
-              <Table.HeaderCell width={4}>{t('common.name')}</Table.HeaderCell>
-              <Table.HeaderCell width={4}>{t('common.username')}</Table.HeaderCell>
-              <Table.HeaderCell width={4}>{t('common.email')}</Table.HeaderCell>
+              <Table.HeaderCell width={4}>{t('common.identity')}</Table.HeaderCell>
+              <Table.HeaderCell width={4}>{t('common.information')}</Table.HeaderCell>
               <Table.HeaderCell>{t('common.role')}</Table.HeaderCell>
               <Table.HeaderCell />
             </Table.Row>
@@ -101,7 +102,6 @@ const UsersPane = React.memo(() => {
           className={styles.toggleDeactivatedButton}
           onClick={handleToggleDeactivatedClick}
         />
-
         {canAdd && (
           <AddPopup>
             <Button

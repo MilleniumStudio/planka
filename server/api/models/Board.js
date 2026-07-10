@@ -10,6 +10,88 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Board:
+ *       type: object
+ *       required:
+ *         - id
+ *         - projectId
+ *         - position
+ *         - name
+ *         - defaultView
+ *         - defaultCardType
+ *         - limitCardTypesToDefaultOne
+ *         - alwaysDisplayCardCreator
+ *         - displayCardAges
+ *         - expandTaskListsByDefault
+ *         - createdAt
+ *         - updatedAt
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: Unique identifier for the board
+ *           example: "1357158568008091264"
+ *         projectId:
+ *           type: string
+ *           description: ID of the project the board belongs to
+ *           example: "1357158568008091265"
+ *         position:
+ *           type: number
+ *           description: Position of the board within the project
+ *           example: 65536
+ *         name:
+ *           type: string
+ *           description: Name/title of the board
+ *           example: Development Board
+ *         defaultView:
+ *           type: string
+ *           enum: [kanban, grid, list]
+ *           default: kanban
+ *           description: Default view for the board
+ *           example: kanban
+ *         defaultCardType:
+ *           type: string
+ *           enum: [project, story]
+ *           default: project
+ *           description: Default card type for new cards
+ *           example: project
+ *         limitCardTypesToDefaultOne:
+ *           type: boolean
+ *           default: false
+ *           description: Whether to limit card types to default one
+ *           example: false
+ *         alwaysDisplayCardCreator:
+ *           type: boolean
+ *           default: false
+ *           description: Whether to always display the card creator
+ *           example: false
+ *         displayCardAges:
+ *           type: boolean
+ *           default: false
+ *           description: Whether to display card ages
+ *           example: false
+ *         expandTaskListsByDefault:
+ *           type: boolean
+ *           default: false
+ *           description: Whether to expand task lists by default
+ *           example: false
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the board was created
+ *           example: 2024-01-01T00:00:00.000Z
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the board was last updated
+ *           example: 2024-01-01T00:00:00.000Z
+ */
+
 const Card = require('./Card');
 
 const Views = {
@@ -60,6 +142,16 @@ module.exports = {
       type: 'boolean',
       defaultsTo: false,
       columnName: 'always_display_card_creator',
+    },
+    displayCardAges: {
+      type: 'boolean',
+      defaultsTo: false,
+      columnName: 'display_card_ages',
+    },
+    expandTaskListsByDefault: {
+      type: 'boolean',
+      defaultsTo: false,
+      columnName: 'expand_task_lists_by_default',
     },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗

@@ -3,6 +3,77 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /lists/{id}:
+ *   patch:
+ *     summary: Update list
+ *     description: Updates a list. Can move lists between boards. Requires board editor permissions.
+ *     tags:
+ *       - Lists
+ *     operationId: updateList
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the list to update
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               boardId:
+ *                 type: string
+ *                 description: ID of the board to move list to
+ *                 example: "1357158568008091265"
+ *               type:
+ *                 type: string
+ *                 enum: [active, closed]
+ *                 description: Type/status of the list
+ *                 example: active
+ *               position:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Position of the list within the board
+ *                 example: 65536
+ *               name:
+ *                 type: string
+ *                 maxLength: 128
+ *                 description: Name/title of the list
+ *                 example: To Do
+ *               color:
+ *                 type: string
+ *                 enum: [berry-red, pumpkin-orange, lagoon-blue, pink-tulip, light-mud, orange-peel, bright-moss, antique-blue, dark-granite, turquoise-sea]
+ *                 nullable: true
+ *                 description: Color for the list
+ *                 example: lagoon-blue
+ *     responses:
+ *       200:
+ *         description: List updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/List'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {
@@ -12,6 +83,9 @@ const Errors = {
   LIST_NOT_FOUND: {
     listNotFound: 'List not found',
   },
+  BOARD_NOT_FOUND: {
+    boardNotFound: 'Board not found',
+  },
 };
 
 module.exports = {
@@ -20,9 +94,10 @@ module.exports = {
       ...idInput,
       required: true,
     },
+    boardId: idInput,
     type: {
       type: 'string',
-      isIn: List.FINITE_TYPES,
+      isIn: List.KANBAN_TYPES,
     },
     position: {
       type: 'number',
@@ -47,6 +122,9 @@ module.exports = {
     listNotFound: {
       responseType: 'notFound',
     },
+    boardNotFound: {
+      responseType: 'notFound',
+    },
   },
 
   async fn(inputs) {
@@ -59,7 +137,7 @@ module.exports = {
     let { list } = pathToProject;
     const { board, project } = pathToProject;
 
-    const boardMembership = await BoardMembership.qm.getOneByBoardIdAndUserId(
+    let boardMembership = await BoardMembership.qm.getOneByBoardIdAndUserId(
       board.id,
       currentUser.id,
     );
@@ -68,7 +146,7 @@ module.exports = {
       throw Errors.LIST_NOT_FOUND; // Forbidden
     }
 
-    if (!sails.helpers.lists.isFinite(list)) {
+    if (!sails.helpers.lists.isKanban(list)) {
       throw Errors.NOT_ENOUGH_RIGHTS;
     }
 
@@ -76,13 +154,39 @@ module.exports = {
       throw Errors.NOT_ENOUGH_RIGHTS;
     }
 
+    let nextProject;
+    let nextBoard;
+
+    if (!_.isUndefined(inputs.boardId)) {
+      ({ board: nextBoard, project: nextProject } = await sails.helpers.boards
+        .getPathToProjectById(inputs.boardId)
+        .intercept('pathNotFound', () => Errors.BOARD_NOT_FOUND));
+
+      boardMembership = await BoardMembership.qm.getOneByBoardIdAndUserId(
+        nextBoard.id,
+        currentUser.id,
+      );
+
+      if (!boardMembership) {
+        throw Errors.BOARD_NOT_FOUND; // Forbidden
+      }
+
+      if (boardMembership.role !== BoardMembership.Roles.EDITOR) {
+        throw Errors.NOT_ENOUGH_RIGHTS;
+      }
+    }
+
     const values = _.pick(inputs, ['type', 'position', 'name', 'color']);
 
     list = await sails.helpers.lists.updateOne.with({
-      values,
       project,
       board,
       record: list,
+      values: {
+        ...values,
+        project: nextProject,
+        board: nextBoard,
+      },
       actorUser: currentUser,
       request: this.req,
     });

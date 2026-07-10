@@ -14,8 +14,7 @@ import { useDidUpdate } from '../../../lib/hooks';
 import selectors from '../../../selectors';
 import entryActions from '../../../entry-actions';
 import { usePopupInClosableContext } from '../../../hooks';
-import { isListArchiveOrTrash } from '../../../utils/record-helpers';
-import { StaticUserIds } from '../../../constants/StaticUsers';
+import { isListArchiveOrTrash, isUserStatic } from '../../../utils/record-helpers';
 import { BoardMembershipRoles } from '../../../constants/Enums';
 import { ClosableContext } from '../../../contexts';
 import Edit from './Edit';
@@ -60,15 +59,14 @@ const Item = React.memo(({ id }) => {
       isEditor = boardMembership.role === BoardMembershipRoles.EDITOR;
     }
 
+    const canEditOrDeleteAsMember =
+      isMember &&
+      comment.userId === boardMembership.userId &&
+      (isEditor || boardMembership.canComment);
+
     return {
-      canEdit:
-        isMember &&
-        comment.userId === boardMembership.userId &&
-        (isEditor || boardMembership.canComment),
-      canDelete:
-        isManager ||
-        isEditor ||
-        (isMember && comment.userId === boardMembership.userId && boardMembership.canComment),
+      canEdit: canEditOrDeleteAsMember,
+      canDelete: isManager || canEditOrDeleteAsMember,
     };
   }, shallowEqual);
 
@@ -108,7 +106,7 @@ const Item = React.memo(({ id }) => {
         ) : (
           <div className={classNames(styles.bubble, isCurrentUser && styles.bubbleRight)}>
             <div className={styles.header}>
-              {user.id === StaticUserIds.DELETED
+              {isUserStatic(user)
                 ? t(`common.${user.name}`, {
                     context: 'title',
                   })

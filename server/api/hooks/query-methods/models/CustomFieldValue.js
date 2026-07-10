@@ -3,7 +3,17 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
-const defaultFind = (criteria) => CustomFieldValue.find(criteria).sort('id');
+const { makeRowToModelTransformer } = require('../helpers');
+
+const transformRowToModel = makeRowToModelTransformer(CustomFieldValue);
+
+const defaultFind = (criteria, { customFieldGroupIdOrIds } = {}) => {
+  if (customFieldGroupIdOrIds) {
+    criteria.customFieldGroupId = customFieldGroupIdOrIds; // eslint-disable-line no-param-reassign
+  }
+
+  return CustomFieldValue.find(criteria).sort('id');
+};
 
 /* Query methods */
 
@@ -26,37 +36,26 @@ const createOrUpdateOne = async (values) => {
     new Date().toISOString(),
   ]);
 
-  const [customFieldValue] = queryResult.rows;
-
-  return {
-    id: customFieldValue.id,
-    cardId: customFieldValue.card_id,
-    customFieldGroupId: customFieldValue.custom_field_group_id,
-    customFieldId: customFieldValue.custom_field_id,
-    content: customFieldValue.content,
-    createdAt: customFieldValue.created_at,
-    updatedAt: customFieldValue.updated_at,
-  };
+  return transformRowToModel(queryResult.rows[0]);
 };
 
 const getByIds = (ids) => defaultFind(ids);
 
-const getByCardId = (cardId, { customFieldGroupIdOrIds } = {}) => {
-  const criteria = {
-    cardId,
-  };
+const getByCardId = (cardId, { customFieldGroupIdOrIds } = {}) =>
+  defaultFind(
+    {
+      cardId,
+    },
+    { customFieldGroupIdOrIds },
+  );
 
-  if (customFieldGroupIdOrIds) {
-    criteria.customFieldGroupId = customFieldGroupIdOrIds;
-  }
-
-  return defaultFind(criteria);
-};
-
-const getByCardIds = (cardIds) =>
-  defaultFind({
-    cardId: cardIds,
-  });
+const getByCardIds = (cardIds, { customFieldGroupIdOrIds } = {}) =>
+  defaultFind(
+    {
+      cardId: cardIds,
+    },
+    { customFieldGroupIdOrIds },
+  );
 
 const getByCustomFieldGroupId = (customFieldGroupId) =>
   defaultFind({

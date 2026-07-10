@@ -3,6 +3,67 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /users/{id}/username:
+ *   patch:
+ *     summary: Update user username
+ *     description: Updates a user's username. Users must provide a current password when updating their own username (unless they are SSO users with `oidcIgnoreUsername` enabled). Admins can update any user's username without the current password.
+ *     tags:
+ *       - Users
+ *     operationId: updateUserUsername
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the user whose username to update
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 32
+ *                 pattern: '^[a-zA-Z0-9]+((_|\.)?[a-zA-Z0-9])*$'
+ *                 nullable: true
+ *                 description: Unique username for user identification
+ *                 example: john_doe
+ *               currentPassword:
+ *                 type: string
+ *                 maxLength: 256
+ *                 description: Current password (required when updating own username)
+ *                 example: SecurePassword123!
+ *     responses:
+ *       200:
+ *         description: Username updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         $ref: '#/components/responses/Conflict'
+ */
+
 const bcrypt = require('bcrypt');
 
 const { idInput } = require('../../../utils/inputs');
@@ -32,7 +93,7 @@ module.exports = {
       type: 'string',
       isNotEmptyString: true,
       minLength: 3,
-      maxLength: 16,
+      maxLength: 32,
       regex: /^[a-zA-Z0-9]+((_|\.)?[a-zA-Z0-9])*$/,
       allowNull: true,
     },
@@ -71,7 +132,7 @@ module.exports = {
       throw Errors.USER_NOT_FOUND;
     }
 
-    if (user.email === sails.config.custom.defaultAdminEmail) {
+    if (user.email === sails.config.custom.defaultAdminEmail || sails.config.custom.demoMode) {
       throw Errors.NOT_ENOUGH_RIGHTS;
     }
 

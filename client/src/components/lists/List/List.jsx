@@ -5,18 +5,19 @@
 
 import upperFirst from 'lodash/upperFirst';
 import camelCase from 'lodash/camelCase';
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { Draggable, Droppable } from 'react-beautiful-dnd';
 import { Button, Icon } from 'semantic-ui-react';
-import { useDidUpdate, useTransitioning } from '../../../lib/hooks';
+import { useDidUpdate, useToggle, useTransitioning } from '../../../lib/hooks';
 import { usePopup } from '../../../lib/popup';
 
 import selectors from '../../../selectors';
 import entryActions from '../../../entry-actions';
+import { BoardShortcutsContext } from '../../../contexts';
 import DroppableTypes from '../../../constants/DroppableTypes';
 import { BoardMembershipRoles, ListTypes } from '../../../constants/Enums';
 import { ListTypeIcons } from '../../../constants/Icons';
@@ -30,6 +31,15 @@ import PlusMathIcon from '../../../assets/images/plus-math-icon.svg?react';
 import styles from './List.module.scss';
 import globalStyles from '../../../styles.module.scss';
 
+const AddCardPositions = {
+  TOP: 'top',
+  BOTTOM: 'bottom',
+};
+
+const INDEX_BY_ADD_CARD_POSITION = {
+  [AddCardPositions.TOP]: 0,
+};
+
 const List = React.memo(({ id, index }) => {
   const selectListById = useMemo(() => selectors.makeSelectListById(), []);
 
@@ -38,38 +48,59 @@ const List = React.memo(({ id, index }) => {
     [],
   );
 
+  const clipboard = useSelector(selectors.selectClipboard);
   const isFavoritesActive = useSelector(selectors.selectIsFavoritesActiveForCurrentUser);
+
   const list = useSelector((state) => selectListById(state, id));
   const cardIds = useSelector((state) => selectFilteredCardIdsByListId(state, id));
 
-  const { canEdit, canArchiveCards, canAddCard, canDropCard } = useSelector((state) => {
-    const isEditModeEnabled = selectors.selectIsEditModeEnabled(state); // TODO: move out?
+  const { canEdit, canArchiveCards, canAddCard, canPasteCard, canDropCard } = useSelector(
+    (state) => {
+      const isEditModeEnabled = selectors.selectIsEditModeEnabled(state); // TODO: move out?
 
-    const boardMembership = selectors.selectCurrentUserMembershipForCurrentBoard(state);
-    const isEditor = !!boardMembership && boardMembership.role === BoardMembershipRoles.EDITOR;
+      const boardMembership = selectors.selectCurrentUserMembershipForCurrentBoard(state);
+      const isEditor = !!boardMembership && boardMembership.role === BoardMembershipRoles.EDITOR;
 
-    return {
-      canEdit: isEditModeEnabled && isEditor,
-      canArchiveCards: list.type === ListTypes.CLOSED && isEditor,
-      canAddCard: isEditor,
-      canDropCard: isEditor,
-    };
-  }, shallowEqual);
+      return {
+        canEdit: isEditModeEnabled && isEditor,
+        canArchiveCards: list.type === ListTypes.CLOSED && isEditor,
+        canAddCard: isEditor,
+        canPasteCard: isEditor,
+        canDropCard: isEditor,
+      };
+    },
+    shallowEqual,
+  );
 
   const dispatch = useDispatch();
   const [t] = useTranslation();
   const [isEditNameOpened, setIsEditNameOpened] = useState(false);
-  const [isAddCardOpened, setIsAddCardOpened] = useState(false);
+  const [addCardPosition, setAddCardPosition] = useState(null);
+  const [scrollBottomState, scrollBottom] = useToggle();
+  const [handleListMouseEnter, handleListMouseLeave] = useContext(BoardShortcutsContext);
 
   const wrapperRef = useRef(null);
   const cardsWrapperRef = useRef(null);
 
   const handleCardCreate = useCallback(
     (data, autoOpen) => {
-      dispatch(entryActions.createCard(id, data, autoOpen));
+      dispatch(
+        entryActions.createCard(id, data, INDEX_BY_ADD_CARD_POSITION[addCardPosition], autoOpen),
+      );
     },
-    [id, dispatch],
+    [id, dispatch, addCardPosition],
   );
+
+  const handlePasteCardClick = useCallback(() => {
+    dispatch(entryActions.pasteCard(id));
+    scrollBottom();
+  }, [id, dispatch, scrollBottom]);
+
+  const handleMouseEnter = useCallback(() => {
+    handleListMouseEnter(id, () => {
+      scrollBottom();
+    });
+  }, [id, scrollBottom, handleListMouseEnter]);
 
   const handleHeaderClick = useCallback(() => {
     if (list.isPersisted && canEdit) {
@@ -78,15 +109,15 @@ const List = React.memo(({ id, index }) => {
   }, [list.isPersisted, canEdit]);
 
   const handleAddCardClick = useCallback(() => {
-    setIsAddCardOpened(true);
+    setAddCardPosition(AddCardPositions.BOTTOM);
   }, []);
 
   const handleAddCardClose = useCallback(() => {
-    setIsAddCardOpened(false);
+    setAddCardPosition(null);
   }, []);
 
   const handleCardAdd = useCallback(() => {
-    setIsAddCardOpened(true);
+    setAddCardPosition(AddCardPositions.TOP);
   }, []);
 
   const handleNameEdit = useCallback(() => {
@@ -104,13 +135,29 @@ const List = React.memo(({ id, index }) => {
   );
 
   useDidUpdate(() => {
-    if (isAddCardOpened) {
-      cardsWrapperRef.current.scrollTop = cardsWrapperRef.current.scrollHeight;
+    if (!addCardPosition) {
+      return;
     }
-  }, [cardIds, isAddCardOpened]);
+
+    cardsWrapperRef.current.scrollTop =
+      addCardPosition === AddCardPositions.TOP ? 0 : cardsWrapperRef.current.scrollHeight;
+  }, [cardIds, addCardPosition]);
+
+  useDidUpdate(() => {
+    cardsWrapperRef.current.scrollTop = cardsWrapperRef.current.scrollHeight;
+  }, [scrollBottomState]);
 
   const ActionsPopup = usePopup(ActionsStep);
   const ArchiveCardsPopup = usePopup(ArchiveCardsStep);
+
+  const addCardNode = canAddCard && (
+    <AddCard
+      isOpened={!!addCardPosition}
+      className={styles.addCard}
+      onCreate={handleCardCreate}
+      onClose={handleAddCardClose}
+    />
+  );
 
   const cardsNode = (
     <Droppable
@@ -122,18 +169,12 @@ const List = React.memo(({ id, index }) => {
         // eslint-disable-next-line react/jsx-props-no-spreading
         <div {...droppableProps} ref={innerRef}>
           <div className={styles.cards}>
+            {addCardPosition === AddCardPositions.TOP && addCardNode}
             {cardIds.map((cardId, cardIndex) => (
               <DraggableCard key={cardId} id={cardId} index={cardIndex} className={styles.card} />
             ))}
             {placeholder}
-            {canAddCard && (
-              <AddCard
-                isOpened={isAddCardOpened}
-                className={styles.addCard}
-                onCreate={handleCardCreate}
-                onClose={handleAddCardClose}
-              />
-            )}
+            {addCardPosition === AddCardPositions.BOTTOM && addCardNode}
           </div>
         </div>
       )}
@@ -152,12 +193,15 @@ const List = React.memo(({ id, index }) => {
           data-drag-scroller
           ref={innerRef}
           className={styles.innerWrapper}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleListMouseLeave}
         >
           <div
             ref={wrapperRef}
             className={classNames(
               styles.outerWrapper,
               isFavoritesActive && styles.outerWrapperWithFavorites,
+              list.color && globalStyles[`background${upperFirst(camelCase(list.color))}Soft`],
             )}
             onTransitionEnd={handleWrapperTransitionEnd}
           >
@@ -213,18 +257,34 @@ const List = React.memo(({ id, index }) => {
             <div ref={cardsWrapperRef} className={styles.cardsInnerWrapper}>
               <div className={styles.cardsOuterWrapper}>{cardsNode}</div>
             </div>
-            {!isAddCardOpened && canAddCard && (
-              <button
-                type="button"
-                disabled={!list.isPersisted}
-                className={styles.addCardButton}
-                onClick={handleAddCardClick}
-              >
-                <PlusMathIcon className={styles.addCardButtonIcon} />
-                <span className={styles.addCardButtonText}>
-                  {cardIds.length > 0 ? t('action.addAnotherCard') : t('action.addCard')}
-                </span>
-              </button>
+            {!addCardPosition && canAddCard && (
+              <div className={styles.addCardButtonWrapper}>
+                <button
+                  type="button"
+                  disabled={!list.isPersisted}
+                  className={classNames(
+                    styles.addCardButton,
+                    list.color &&
+                      globalStyles[`background${upperFirst(camelCase(list.color))}Soft`],
+                  )}
+                  onClick={handleAddCardClick}
+                >
+                  <PlusMathIcon className={styles.addCardButtonIcon} />
+                  <span className={styles.addCardButtonText}>
+                    {cardIds.length > 0 ? t('action.addAnotherCard') : t('action.addCard')}
+                  </span>
+                </button>
+                {clipboard && canPasteCard && (
+                  <button
+                    type="button"
+                    disabled={!list.isPersisted}
+                    className={classNames(styles.addCardButton, styles.paste)}
+                    onClick={handlePasteCardClick}
+                  >
+                    <Icon name="paste" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

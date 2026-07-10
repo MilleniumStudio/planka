@@ -10,6 +10,136 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Card:
+ *       type: object
+ *       required:
+ *         - id
+ *         - boardId
+ *         - listId
+ *         - creatorUserId
+ *         - prevListId
+ *         - coverAttachmentId
+ *         - type
+ *         - position
+ *         - name
+ *         - description
+ *         - dueDate
+ *         - isDueCompleted
+ *         - stopwatch
+ *         - commentsTotal
+ *         - isClosed
+ *         - listChangedAt
+ *         - createdAt
+ *         - updatedAt
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: Unique identifier for the card
+ *           example: "1357158568008091264"
+ *         boardId:
+ *           type: string
+ *           description: ID of the board the card belongs to (denormalized)
+ *           example: "1357158568008091265"
+ *         listId:
+ *           type: string
+ *           description: ID of the list the card belongs to
+ *           example: "1357158568008091266"
+ *         creatorUserId:
+ *           type: string
+ *           nullable: true
+ *           description: ID of the user who created the card
+ *           example: "1357158568008091267"
+ *         prevListId:
+ *           type: string
+ *           nullable: true
+ *           description: ID of the previous list the card was in (available when in archive or trash)
+ *           example: "1357158568008091268"
+ *         coverAttachmentId:
+ *           type: string
+ *           nullable: true
+ *           description: ID of the attachment used as cover
+ *           example: "1357158568008091269"
+ *         type:
+ *           type: string
+ *           enum: [project, story]
+ *           description: Type of the card
+ *           example: project
+ *         position:
+ *           type: number
+ *           nullable: true
+ *           description: Position of the card within the list
+ *           example: 65536
+ *         name:
+ *           type: string
+ *           description: Name/title of the card
+ *           example: Implement user authentication
+ *         description:
+ *           type: string
+ *           nullable: true
+ *           description: Detailed description of the card
+ *           example: Add JWT-based authentication system...
+ *         dueDate:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Due date for the card
+ *           example: 2024-01-01T00:00:00.000Z
+ *         isDueCompleted:
+ *           type: boolean
+ *           nullable: true
+ *           description: Whether the due date is completed
+ *           example: false
+ *         stopwatch:
+ *           type: object
+ *           required:
+ *             - startedAt
+ *             - total
+ *           nullable: true
+ *           description: Stopwatch data for time tracking
+ *           properties:
+ *             startedAt:
+ *               type: string
+ *               format: date-time
+ *               description: When the stopwatch was started
+ *               example: 2024-01-01T00:00:00.000Z
+ *             total:
+ *               type: number
+ *               description: Total time in seconds
+ *               example: 3600
+ *         commentsTotal:
+ *           type: number
+ *           default: 0
+ *           description: Total number of comments on the card
+ *           example: 100
+ *         isClosed:
+ *           type: boolean
+ *           default: false
+ *           description: Whether the card is closed
+ *           example: false
+ *         listChangedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the card was last moved between lists
+ *           example: 2024-01-01T00:00:00.000Z
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the card was created
+ *           example: 2024-01-01T00:00:00.000Z
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the card was last updated
+ *           example: 2024-01-01T00:00:00.000Z
+ */
+
 const Types = {
   PROJECT: 'project',
   STORY: 'story',
@@ -45,6 +175,11 @@ module.exports = {
       type: 'ref',
       columnName: 'due_date',
     },
+    isDueCompleted: {
+      type: 'boolean',
+      allowNull: true,
+      columnName: 'is_due_completed',
+    },
     stopwatch: {
       type: 'json',
     },
@@ -52,6 +187,11 @@ module.exports = {
       type: 'number',
       defaultsTo: 0,
       columnName: 'comments_total',
+    },
+    isClosed: {
+      type: 'boolean',
+      defaultsTo: false,
+      columnName: 'is_closed',
     },
     listChangedAt: {
       type: 'ref',

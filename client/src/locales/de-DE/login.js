@@ -2,6 +2,8 @@ export default {
   translation: {
     common: {
       activeUsersLimitReached: 'Maximale Anzahl aktiver Benutzer erreicht',
+      adminLoginRequiredToInitializeInstance:
+        'Admin-Anmeldung erforderlich zur Initialisierung der Instanz',
       emailAlreadyInUse: 'E-mail Adresse wird bereits benutzt',
       emailOrUsername: 'E-Mail-Adresse oder Benutzername',
       invalidCredentials: 'Ungültige Anmeldeinformationen',
@@ -17,9 +19,15 @@ export default {
       unknownError: 'Unbekannter Fehler, bitte später erneut versuchen',
       useSingleSignOn: 'Einmalige Anmeldung (SSO) verwenden',
       usernameAlreadyInUse: 'Benutzername wird bereits verwendet',
+      whoops_title: 'Hoppla!',
     },
 
     action: {
+      cancelAndClose: 'Abbrechen und schließen',
+      continue: 'Fortfahren',
+      debugSso: 'SSO debuggen',
+      goBack: 'Zurück gehen',
+      goHome: 'Zur Startseite',
       logIn: 'Einloggen',
       logInWithSso: 'Einloggen mit SSO',
     },

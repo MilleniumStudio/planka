@@ -13,8 +13,9 @@
 
 module.exports = function defineCurrentUserHook(sails) {
   const TOKEN_PATTERN = /^Bearer /;
+  const API_KEY_HEADER_NAME = 'x-api-key';
 
-  const getSessionAndUser = async (accessToken, httpOnlyToken) => {
+  const getSessionAndUserByAccessToken = async (accessToken, httpOnlyToken) => {
     let payload;
     try {
       payload = sails.helpers.utils.verifyJwtToken(accessToken);
@@ -50,6 +51,12 @@ module.exports = function defineCurrentUserHook(sails) {
     };
   };
 
+  const getUserByApiKey = (apiKey) => {
+    const apiKeyHash = sails.helpers.utils.hash(apiKey);
+
+    return User.qm.getOneActiveByApiKeyHash(apiKeyHash);
+  };
+
   return {
     /**
      * Runs when this Sails app loads/lifts.
@@ -63,28 +70,52 @@ module.exports = function defineCurrentUserHook(sails) {
       before: {
         '/api/*': {
           async fn(req, res, next) {
-            const { authorization: authorizationHeader } = req.headers;
+            const { authorization: authorizationHeader, [API_KEY_HEADER_NAME]: apiKey } =
+              req.headers;
 
             if (authorizationHeader && TOKEN_PATTERN.test(authorizationHeader)) {
               const accessToken = authorizationHeader.replace(TOKEN_PATTERN, '');
-              const { httpOnlyToken } = req.cookies;
+              const { internalAccessToken } = sails.config.custom;
 
-              const sessionAndUser = await getSessionAndUser(accessToken, httpOnlyToken);
+              if (internalAccessToken && accessToken === internalAccessToken) {
+                req.currentUser = User.INTERNAL;
+              } else {
+                const { httpOnlyToken } = req.cookies;
 
-              if (sessionAndUser) {
-                const { session, user } = sessionAndUser;
+                const sessionAndUser = await getSessionAndUserByAccessToken(
+                  accessToken,
+                  httpOnlyToken,
+                );
 
+                if (sessionAndUser) {
+                  const { session, user } = sessionAndUser;
+
+                  if (user.language) {
+                    req.setLocale(user.language);
+                  }
+
+                  Object.assign(req, {
+                    currentSession: session,
+                    currentUser: user,
+                  });
+
+                  if (req.isSocket) {
+                    sails.sockets.join(req, `@accessToken:${session.accessToken}`);
+                    sails.sockets.join(req, `@user:${user.id}`);
+                  }
+                }
+              }
+            } else if (apiKey) {
+              const user = await getUserByApiKey(apiKey);
+
+              if (user) {
                 if (user.language) {
                   req.setLocale(user.language);
                 }
 
-                Object.assign(req, {
-                  currentSession: session,
-                  currentUser: user,
-                });
+                req.currentUser = user;
 
                 if (req.isSocket) {
-                  sails.sockets.join(req, `@accessToken:${session.accessToken}`);
                   sails.sockets.join(req, `@user:${user.id}`);
                 }
               }
@@ -98,7 +129,10 @@ module.exports = function defineCurrentUserHook(sails) {
             const { accessToken, httpOnlyToken } = req.cookies;
 
             if (accessToken) {
-              const sessionAndUser = await getSessionAndUser(accessToken, httpOnlyToken);
+              const sessionAndUser = await getSessionAndUserByAccessToken(
+                accessToken,
+                httpOnlyToken,
+              );
 
               if (sessionAndUser) {
                 const { session, user } = sessionAndUser;
@@ -107,6 +141,16 @@ module.exports = function defineCurrentUserHook(sails) {
                   currentSession: session,
                   currentUser: user,
                 });
+              }
+            } else {
+              const { [API_KEY_HEADER_NAME]: apiKey } = req.headers;
+
+              if (apiKey) {
+                const user = await getUserByApiKey(apiKey);
+
+                if (user) {
+                  req.currentUser = user;
+                }
               }
             }
 

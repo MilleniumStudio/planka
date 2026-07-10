@@ -18,25 +18,27 @@ const handleCardsUpdate = (cards, activities) => ({
   },
 });
 
-const createCard = (listId, data, autoOpen) => ({
+const createCard = (listId, data, index, autoOpen = false) => ({
   type: EntryActionTypes.CARD_CREATE,
   payload: {
     listId,
     data,
+    index,
     autoOpen,
   },
 });
 
-const createCardInCurrentList = (data, autoOpen) => ({
-  type: EntryActionTypes.CARD_IN_CURRENT_LIST_CREATE,
+const createCardInCurrentContext = (data, index = 0, autoOpen = false) => ({
+  type: EntryActionTypes.CARD_IN_CURRENT_CONTEXT_CREATE,
   payload: {
     data,
+    index,
     autoOpen,
   },
 });
 
-const createCardInFirstFiniteList = (data, autoOpen) => ({
-  type: EntryActionTypes.CARD_IN_FIRST_FINITE_LIST_CREATE,
+const createCardInCurrentList = (data, autoOpen = false) => ({
+  type: EntryActionTypes.CARD_IN_CURRENT_LIST_CREATE,
   payload: {
     data,
     autoOpen,
@@ -133,7 +135,7 @@ const transferCurrentCard = (boardId, listId, index = 0) => ({
   },
 });
 
-const duplicateCard = (id, data) => ({
+const duplicateCard = (id, data = {}) => ({
   type: EntryActionTypes.CARD_DUPLICATE,
   payload: {
     id,
@@ -141,11 +143,42 @@ const duplicateCard = (id, data) => ({
   },
 });
 
-const duplicateCurrentCard = (data) => ({
+const duplicateCurrentCard = (data = {}) => ({
   type: EntryActionTypes.CURRENT_CARD_DUPLICATE,
   payload: {
     data,
   },
+});
+
+const copyCard = (id) => ({
+  type: EntryActionTypes.CARD_COPY,
+  payload: {
+    id,
+  },
+});
+
+const cutCard = (id) => ({
+  type: EntryActionTypes.CARD_CUT,
+  payload: {
+    id,
+  },
+});
+
+const pasteCard = (listId) => ({
+  type: EntryActionTypes.CARD_PASTE,
+  payload: {
+    listId,
+  },
+});
+
+const pasteCardInCurrentContext = () => ({
+  type: EntryActionTypes.CARD_IN_CURRENT_CONTEXT_PASTE,
+  payload: {},
+});
+
+const pasteCardInCurrentList = () => ({
+  type: EntryActionTypes.CARD_IN_CURRENT_LIST_PASTE,
+  payload: {},
 });
 
 const goToAdjacentCard = (direction) => ({
@@ -178,8 +211,8 @@ export default {
   fetchCardsInCurrentList,
   handleCardsUpdate,
   createCard,
+  createCardInCurrentContext,
   createCardInCurrentList,
-  createCardInFirstFiniteList,
   handleCardCreate,
   updateCard,
   updateCurrentCard,
@@ -194,6 +227,11 @@ export default {
   transferCurrentCard,
   duplicateCard,
   duplicateCurrentCard,
+  copyCard,
+  cutCard,
+  pasteCard,
+  pasteCardInCurrentContext,
+  pasteCardInCurrentList,
   goToAdjacentCard,
   deleteCard,
   deleteCurrentCard,

@@ -16,6 +16,7 @@ export default class extends BaseModel {
     position: attr(),
     name: attr(),
     showOnFrontOfCard: attr(),
+    hideCompletedTasks: attr(),
     cardId: fk({
       to: 'Card',
       as: 'card',
@@ -31,7 +32,9 @@ export default class extends BaseModel {
       case ActionTypes.PROJECT_UPDATE_HANDLE:
       case ActionTypes.PROJECT_MANAGER_CREATE_HANDLE:
       case ActionTypes.BOARD_MEMBERSHIP_CREATE_HANDLE:
+      case ActionTypes.LIST_UPDATE_HANDLE:
       case ActionTypes.CARD_UPDATE_HANDLE:
+      case ActionTypes.CARD_TRANSFER__FAILURE:
         if (payload.taskLists) {
           payload.taskLists.forEach((taskList) => {
             TaskList.upsert(taskList);
@@ -52,6 +55,7 @@ export default class extends BaseModel {
       case ActionTypes.BOARD_FETCH__SUCCESS:
       case ActionTypes.CARDS_FETCH__SUCCESS:
       case ActionTypes.CARD_CREATE_HANDLE:
+      case ActionTypes.CARD_TRANSFER__SUCCESS:
       case ActionTypes.CARD_DUPLICATE__SUCCESS:
         payload.taskLists.forEach((taskList) => {
           TaskList.upsert(taskList);
@@ -111,6 +115,7 @@ export default class extends BaseModel {
       position: this.position,
       name: this.name,
       showOnFrontOfCard: this.showOnFrontOfCard,
+      hideCompletedTasks: this.hideCompletedTasks,
       ...data,
     });
 

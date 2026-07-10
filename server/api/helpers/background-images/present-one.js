@@ -14,13 +14,11 @@ module.exports = {
   },
 
   fn(inputs) {
-    const fileManager = sails.hooks['file-manager'].getInstance();
-
     return {
-      ..._.omit(inputs.record, ['dirname', 'extension']),
-      url: `${fileManager.buildUrl(`${sails.config.custom.backgroundImagesPathSegment}/${inputs.record.dirname}/original.${inputs.record.extension}`)}`,
+      ..._.omit(inputs.record, ['uploadedFileId', 'extension']),
+      url: `${sails.config.custom.baseUrl}/background-images/${inputs.record.uploadedFileId}/original.${inputs.record.extension}`,
       thumbnailUrls: {
-        outside360: `${fileManager.buildUrl(`${sails.config.custom.backgroundImagesPathSegment}/${inputs.record.dirname}/outside-360.${inputs.record.extension}`)}`,
+        outside360: `${sails.config.custom.baseUrl}/background-images/${inputs.record.uploadedFileId}/outside-360.${inputs.record.extension}`,
       },
     };
   },

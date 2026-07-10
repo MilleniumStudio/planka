@@ -2,6 +2,8 @@ export default {
   translation: {
     common: {
       activeUsersLimitReached: 'Grænsen for aktive brugere er nået',
+      adminLoginRequiredToInitializeInstance:
+        'Administrator login påkrævet for at initialisere instans',
       emailAlreadyInUse: 'E-mail allerede i brug',
       emailOrUsername: 'E-mail eller brugernavn',
       invalidCredentials: 'Forkerte loginoplysninger',
@@ -17,9 +19,15 @@ export default {
       unknownError: 'Ukendt fejl - prøv igen',
       useSingleSignOn: 'Anvend single sign-on',
       usernameAlreadyInUse: 'Brugernavn allerede i brug',
+      whoops_title: 'Ups!',
     },
 
     action: {
+      cancelAndClose: 'Annuller og luk',
+      continue: 'Fortsæt',
+      debugSso: 'Fejlfind SSO',
+      goBack: 'Gå tilbage',
+      goHome: 'Gå hjem',
       logIn: 'Log på',
       logInWithSso: 'Log på med SSO',
     },

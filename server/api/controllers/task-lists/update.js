@@ -3,6 +3,70 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
+/**
+ * @swagger
+ * /task-lists/{id}:
+ *   patch:
+ *     summary: Update task list
+ *     description: Updates a task list. Requires board editor permissions.
+ *     tags:
+ *       - Task Lists
+ *     operationId: updateTaskList
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the task list to update
+ *         schema:
+ *           type: string
+ *           example: "1357158568008091264"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               position:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Position of the task list within the card
+ *                 example: 65536
+ *               name:
+ *                 type: string
+ *                 maxLength: 128
+ *                 description: Name/title of the task list
+ *                 example: Development Tasks
+ *               showOnFrontOfCard:
+ *                 type: boolean
+ *                 description: Whether to show the task list on the front of the card
+ *                 example: true
+ *               hideCompletedTasks:
+ *                 type: boolean
+ *                 description: Whether to hide completed tasks
+ *                 example: false
+ *     responses:
+ *       200:
+ *         description: Task list updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - item
+ *               properties:
+ *                 item:
+ *                   $ref: '#/components/schemas/TaskList'
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+
 const { idInput } = require('../../../utils/inputs');
 
 const Errors = {
@@ -30,6 +94,9 @@ module.exports = {
       maxLength: 128,
     },
     showOnFrontOfCard: {
+      type: 'boolean',
+    },
+    hideCompletedTasks: {
       type: 'boolean',
     },
   },
@@ -66,7 +133,7 @@ module.exports = {
       throw Errors.NOT_ENOUGH_RIGHTS;
     }
 
-    const values = _.pick(inputs, ['position', 'name', 'showOnFrontOfCard']);
+    const values = _.pick(inputs, ['position', 'name', 'showOnFrontOfCard', 'hideCompletedTasks']);
 
     taskList = await sails.helpers.taskLists.updateOne.with({
       values,

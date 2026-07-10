@@ -60,6 +60,12 @@
     vertical-align: top;
   }
 
+  .attachmentDueDate {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+  }
+
   .attachments {
     display: inline-block;
     margin: 0 8px 8px 0;
@@ -258,6 +264,28 @@
   .moduleWrapper {
     margin: 0 0 0 40px;
     position: relative;
+  }
+
+  .moreActionsButton {
+    background: transparent;
+    box-shadow: none;
+    color: #6b808c;
+    font-weight: normal;
+    margin-top: 8px;
+    padding: 6px 8px 6px 18px;
+    text-align: left;
+    text-decoration: underline;
+    transition: none;
+
+    &:hover {
+      background: rgba(9, 30, 66, 0.08);
+      color: #092d42;
+    }
+  }
+
+  .moreActionsButtonIcon {
+    margin-right: 8px;
+    text-decoration: none;
   }
 
   .sidebarPadding {
