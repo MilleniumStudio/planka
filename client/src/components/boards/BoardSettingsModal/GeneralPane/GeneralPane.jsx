@@ -29,11 +29,30 @@ const GeneralPane = React.memo(() => {
     dispatch(entryActions.deleteBoard(boardId));
   }, [boardId, dispatch]);
 
+  const handleDuplicateClick = useCallback(() => {
+    dispatch(entryActions.duplicateBoard(boardId));
+    dispatch(entryActions.closeModal());
+  }, [boardId, dispatch]);
+
   const ConfirmationPopup = usePopupInClosableContext(ConfirmationStep);
 
   return (
     <Tab.Pane attached={false} className={styles.wrapper}>
       <EditInformation />
+      <Divider horizontal section>
+        <Header as="h4">
+          {t('common.actions', {
+            context: 'title',
+          })}
+        </Header>
+      </Divider>
+      <div className={styles.action}>
+        <Button className={styles.actionButton} onClick={handleDuplicateClick}>
+          {t('action.duplicateBoard', {
+            context: 'title',
+          })}
+        </Button>
+      </div>
       <Divider horizontal section>
         <Header as="h4">
           {t('common.dangerZone', {

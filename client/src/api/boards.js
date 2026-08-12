@@ -16,6 +16,8 @@ const createBoard = (projectId, data, headers) =>
 const createBoardWithImport = (projectId, data, requestId, headers) =>
   http.post(`/projects/${projectId}/boards?requestId=${requestId}`, data, headers);
 
+const duplicateBoard = (id, data, headers) => socket.post(`/boards/${id}/duplicate`, data, headers);
+
 const getBoard = (id, subscribe, headers) =>
   socket
     .get(`/boards/${id}${subscribe ? '?subscribe=true' : ''}`, undefined, headers)
@@ -35,6 +37,7 @@ const deleteBoard = (id, headers) => socket.delete(`/boards/${id}`, undefined, h
 export default {
   createBoard,
   createBoardWithImport,
+  duplicateBoard,
   getBoard,
   updateBoard,
   deleteBoard,

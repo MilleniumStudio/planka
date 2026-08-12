@@ -456,6 +456,7 @@ export default {
       deleteWebhook: 'Supprimer le webhook',
       dismissAll: 'Tout rejeter',
       download: 'Télécharger',
+      duplicateBoard_title: 'Dupliquer le tableau',
       duplicateCard_title: 'Dupliquer la carte',
       edit: 'Modifier',
       editAvatar_title: "Modifier l'avatar",

@@ -3,17 +3,21 @@
  * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
  */
 
-import { call, fork, put, select, take } from 'redux-saga/effects';
+import { call, cancel, fork, put, select, take } from 'redux-saga/effects';
+import { LOCATION_CHANGE_HANDLE } from '../../../lib/redux-router';
 
 import { goToBoard, goToProject } from './router';
 import { openModal } from './modals';
 import request from '../request';
+import i18n from '../../../i18n';
 import selectors from '../../../selectors';
 import actions from '../../../actions';
 import api from '../../../api';
 import { createLocalId } from '../../../utils/local-id';
 import ActionTypes from '../../../constants/ActionTypes';
 import ModalTypes from '../../../constants/ModalTypes';
+
+const BOARD_NAME_MAX_LENGTH = 128;
 
 export function* createBoard(projectId, { import: boardImport, ...data }) {
   const localId = yield call(createLocalId);
@@ -76,6 +80,60 @@ export function* createBoardInCurrentProject(data) {
   const { projectId } = yield select(selectors.selectPath);
 
   yield call(createBoard, projectId, data);
+}
+
+export function* duplicateBoard(id) {
+  const sourceBoard = yield select(selectors.selectBoardById, id);
+  const localId = yield call(createLocalId);
+
+  const nameSuffix = ` (${i18n.t('common.copy', {
+    context: 'inline',
+  })})`;
+
+  const nextData = {
+    position: yield select(selectors.selectNextBoardPosition, sourceBoard.projectId),
+    name: `${sourceBoard.name.slice(0, BOARD_NAME_MAX_LENGTH - nameSuffix.length)}${nameSuffix}`,
+  };
+
+  yield put(
+    actions.createBoard({
+      ...nextData,
+      id: localId,
+      projectId: sourceBoard.projectId,
+      defaultView: sourceBoard.defaultView,
+      defaultCardType: sourceBoard.defaultCardType,
+      limitCardTypesToDefaultOne: sourceBoard.limitCardTypesToDefaultOne,
+      alwaysDisplayCardCreator: sourceBoard.alwaysDisplayCardCreator,
+      displayCardAges: sourceBoard.displayCardAges,
+      expandTaskListsByDefault: sourceBoard.expandTaskListsByDefault,
+    }),
+  );
+
+  // Prevent a completed duplication from taking over navigation after a newer user action.
+  // TODO: use race instead
+  const watchForSupersedingActionTask = yield fork(function* watchForSupersedingAction() {
+    yield take([ActionTypes.BOARD_CREATE, LOCATION_CHANGE_HANDLE]);
+  });
+
+  let board;
+  let boardMemberships;
+
+  try {
+    ({
+      item: board,
+      included: { boardMemberships },
+    } = yield call(request, api.duplicateBoard, id, nextData));
+  } catch (error) {
+    yield put(actions.createBoard.failure(localId, error));
+    yield cancel(watchForSupersedingActionTask);
+    return;
+  }
+
+  yield put(actions.createBoard.success(localId, board, boardMemberships));
+
+  if (watchForSupersedingActionTask.isRunning()) {
+    yield call(goToBoard, board.id);
+  }
 }
 
 export function* handleBoardCreate(board, boardMemberships, requestId) {
@@ -248,6 +306,7 @@ export function* handleBoardDelete(board) {
 export default {
   createBoard,
   createBoardInCurrentProject,
+  duplicateBoard,
   handleBoardCreate,
   fetchBoard,
   updateBoard,

@@ -13,6 +13,9 @@ export default function* boardsWatchers() {
     takeEvery(EntryActionTypes.BOARD_IN_CURRENT_PROJECT_CREATE, ({ payload: { data } }) =>
       services.createBoardInCurrentProject(data),
     ),
+    takeEvery(EntryActionTypes.BOARD_DUPLICATE, ({ payload: { id } }) =>
+      services.duplicateBoard(id),
+    ),
     takeEvery(
       EntryActionTypes.BOARD_CREATE_HANDLE,
       ({ payload: { board, boardMemberships, requestId } }) =>

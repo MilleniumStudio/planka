@@ -9,7 +9,7 @@ const defaultFind = (criteria) => Attachment.find(criteria).sort('id');
 
 /* Query methods */
 
-const create = (arrayOfValues) => {
+const createUsingConnection = async (arrayOfValues, db) => {
   const arrayOfFileValues = arrayOfValues.filter(({ type }) => type === Attachment.Types.FILE);
 
   if (arrayOfFileValues.length > 0) {
@@ -24,44 +24,54 @@ const create = (arrayOfValues) => {
       {},
     );
 
-    return sails.getDatastore().transaction(async (db) => {
-      const queryValues = [];
-      let query = `UPDATE uploaded_file SET references_total = references_total + CASE `;
+    const queryValues = [];
+    let query = `UPDATE uploaded_file SET references_total = references_total + CASE `;
 
-      Object.entries(uploadedFileIdsByTotal).forEach(([total, uploadedFileIdsItem]) => {
-        const inValues = uploadedFileIdsItem.map((uploadedFileId) => {
-          queryValues.push(uploadedFileId);
-          return `$${queryValues.length}`;
-        });
-
-        queryValues.push(total);
-        query += `WHEN id IN (${inValues.join(', ')}) THEN $${queryValues.length}::int `;
-      });
-
-      const inValues = uploadedFileIds.map((uploadedFileId) => {
+    Object.entries(uploadedFileIdsByTotal).forEach(([total, uploadedFileIdsItem]) => {
+      const inValues = uploadedFileIdsItem.map((uploadedFileId) => {
         queryValues.push(uploadedFileId);
         return `$${queryValues.length}`;
       });
 
-      queryValues.push(new Date().toISOString());
-      query += `END, updated_at = $${queryValues.length} WHERE id IN (${inValues.join(', ')}) AND references_total IS NOT NULL RETURNING id`;
-
-      const queryResult = await sails.sendNativeQuery(query, queryValues).usingConnection(db);
-      const nextUploadedFileIds = sails.helpers.utils.mapRecords(queryResult.rows);
-
-      if (nextUploadedFileIds.length < uploadedFileIds.length) {
-        const nextUploadedFileIdsSet = new Set(nextUploadedFileIds);
-
-        // eslint-disable-next-line no-param-reassign
-        arrayOfValues = arrayOfValues.filter(
-          (values) =>
-            values.type !== Attachment.Types.FILE ||
-            nextUploadedFileIdsSet.has(values.data.uploadedFileId),
-        );
-      }
-
-      return Attachment.createEach(arrayOfValues).fetch().usingConnection(db);
+      queryValues.push(total);
+      query += `WHEN id IN (${inValues.join(', ')}) THEN $${queryValues.length}::int `;
     });
+
+    const inValues = uploadedFileIds.map((uploadedFileId) => {
+      queryValues.push(uploadedFileId);
+      return `$${queryValues.length}`;
+    });
+
+    queryValues.push(new Date().toISOString());
+    query += `END, updated_at = $${queryValues.length} WHERE id IN (${inValues.join(', ')}) AND references_total IS NOT NULL RETURNING id`;
+
+    const queryResult = await sails.sendNativeQuery(query, queryValues).usingConnection(db);
+    const nextUploadedFileIds = sails.helpers.utils.mapRecords(queryResult.rows);
+
+    if (nextUploadedFileIds.length < uploadedFileIds.length) {
+      const nextUploadedFileIdsSet = new Set(nextUploadedFileIds);
+
+      // eslint-disable-next-line no-param-reassign
+      arrayOfValues = arrayOfValues.filter(
+        (values) =>
+          values.type !== Attachment.Types.FILE ||
+          nextUploadedFileIdsSet.has(values.data.uploadedFileId),
+      );
+    }
+  }
+
+  return Attachment.createEach(arrayOfValues).fetch().usingConnection(db);
+};
+
+const create = (arrayOfValues, { db } = {}) => {
+  if (db) {
+    return createUsingConnection(arrayOfValues, db);
+  }
+
+  if (arrayOfValues.some(({ type }) => type === Attachment.Types.FILE)) {
+    return sails
+      .getDatastore()
+      .transaction((nextDb) => createUsingConnection(arrayOfValues, nextDb));
   }
 
   return Attachment.createEach(arrayOfValues).fetch();

@@ -153,6 +153,7 @@ module.exports.routes = {
   'POST /api/projects/:projectId/boards': 'boards/create',
   'GET /api/boards/:id': 'boards/show',
   'PATCH /api/boards/:id': 'boards/update',
+  'POST /api/boards/:id/duplicate': 'boards/duplicate',
   'DELETE /api/boards/:id': 'boards/delete',
 
   'POST /api/boards/:boardId/board-memberships': 'board-memberships/create',

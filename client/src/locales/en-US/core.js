@@ -443,6 +443,7 @@ export default {
       deleteWebhook: 'Delete webhook',
       dismissAll: 'Dismiss all',
       download: 'Download',
+      duplicateBoard_title: 'Duplicate Board',
       duplicateCard_title: 'Duplicate Card',
       edit: 'Edit',
       editAvatar_title: 'Edit Avatar',
